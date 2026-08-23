@@ -1,0 +1,362 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+enum MarketFeedStatus {
+  missingKey,
+  connecting,
+  live,
+  historyOnly,
+  error,
+}
+
+class MarketCandle {
+  const MarketCandle({
+    required this.time,
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    this.volume,
+  });
+
+  final DateTime time;
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+  final double? volume;
+
+  MarketCandle copyWith({
+    DateTime? time,
+    double? open,
+    double? high,
+    double? low,
+    double? close,
+    double? volume,
+  }) {
+    return MarketCandle(
+      time: time ?? this.time,
+      open: open ?? this.open,
+      high: high ?? this.high,
+      low: low ?? this.low,
+      close: close ?? this.close,
+      volume: volume ?? this.volume,
+    );
+  }
+}
+
+class TwelveDataException implements Exception {
+  const TwelveDataException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+class TwelveDataService {
+  TwelveDataService({http.Client? client}) : _client = client ?? http.Client();
+
+  // Local prototype only: Flutter web embeds dart-defines in browser code.
+  // Put Twelve Data behind a server-side proxy before a public deployment.
+  static const String _apiKey = '104f432783cc465aa891ab3cd8f575f0';
+  static const String _restHost = 'api.twelvedata.com';
+  static const String _socketUrl = 'wss://ws.twelvedata.com/v1/quotes/price';
+
+  final http.Client _client;
+  WebSocketChannel? _channel;
+  StreamSubscription<dynamic>? _socketSubscription;
+  Timer? _reconnectTimer;
+  int _socketGeneration = 0;
+  bool _disposed = false;
+
+  bool get isConfigured => _apiKey.trim().isNotEmpty;
+
+  String normalizeSymbol(String symbol) {
+    final clean = symbol.trim().toUpperCase();
+
+    if (clean.contains('/')) return clean;
+
+    if (clean.length == 6) {
+      return '${clean.substring(0, 3)}/${clean.substring(3)}';
+    }
+
+    return clean;
+  }
+
+  String intervalFor(String timeframe) {
+    return switch (timeframe) {
+      'M1' => '1min',
+      // Twelve Data has no native 3-minute interval; aggregate 1-minute bars.
+      'M3' => '1min',
+      'M5' => '5min',
+      'M15' => '15min',
+      'H1' => '1h',
+      _ => '1min',
+    };
+  }
+
+  Duration durationFor(String timeframe) {
+    return switch (timeframe) {
+      'M3' => const Duration(minutes: 3),
+      'M5' => const Duration(minutes: 5),
+      'M15' => const Duration(minutes: 15),
+      'H1' => const Duration(hours: 1),
+      _ => const Duration(minutes: 1),
+    };
+  }
+
+  Future<List<MarketCandle>> fetchCandles({
+    required String symbol,
+    required String timeframe,
+    int outputSize = 120,
+  }) async {
+    if (!isConfigured) {
+      throw const TwelveDataException(
+        'TWELVE_DATA_API_KEY is missing. Start Flutter with --dart-define.',
+      );
+    }
+
+    final uri = Uri.https(_restHost, '/time_series', <String, String>{
+      'symbol': normalizeSymbol(symbol),
+      'interval': intervalFor(timeframe),
+      'outputsize':
+          (timeframe == 'M3' ? outputSize * 3 : outputSize).toString(),
+      'order': 'asc',
+      'timezone': 'UTC',
+      'apikey': _apiKey,
+    });
+
+    final response = await _client.get(uri, headers: const {
+      'Accept': 'application/json'
+    }).timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw TwelveDataException(
+        'Twelve Data returned HTTP ${response.statusCode}.',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const TwelveDataException('Unexpected Twelve Data response.');
+    }
+    if (decoded['status'] == 'error') {
+      throw TwelveDataException(
+        decoded['message']?.toString() ?? 'Twelve Data request failed.',
+      );
+    }
+
+    final values = decoded['values'];
+    if (values is! List) {
+      throw const TwelveDataException('No candle history was returned.');
+    }
+
+    final candles = <MarketCandle>[];
+    for (final value in values) {
+      if (value is! Map) continue;
+      final open = double.tryParse(value['open']?.toString() ?? '');
+      final high = double.tryParse(value['high']?.toString() ?? '');
+      final low = double.tryParse(value['low']?.toString() ?? '');
+      final close = double.tryParse(value['close']?.toString() ?? '');
+      final volume = double.tryParse(value['volume']?.toString() ?? '');
+      final stamp = value['datetime']?.toString();
+      if (open == null ||
+          high == null ||
+          low == null ||
+          close == null ||
+          stamp == null) {
+        continue;
+      }
+      final time = DateTime.tryParse('${stamp.replaceFirst(' ', 'T')}Z');
+      if (time == null) continue;
+      candles.add(MarketCandle(
+        time: time,
+        open: open,
+        high: high,
+        low: low,
+        close: close,
+        volume: volume,
+      ));
+    }
+    candles.sort((a, b) => a.time.compareTo(b.time));
+    final result = timeframe == 'M3' ? _aggregate(candles, 3) : candles;
+    if (result.length < 2) {
+      throw const TwelveDataException('Not enough candle data was returned.');
+    }
+    return result.length > outputSize
+        ? result.sublist(result.length - outputSize)
+        : result;
+  }
+
+  List<MarketCandle> _aggregate(List<MarketCandle> source, int minutes) {
+    if (source.isEmpty) return const <MarketCandle>[];
+    final result = <MarketCandle>[];
+    final bucketMilliseconds = Duration(minutes: minutes).inMilliseconds;
+    for (final candle in source) {
+      final bucket = DateTime.fromMillisecondsSinceEpoch(
+        (candle.time.millisecondsSinceEpoch ~/ bucketMilliseconds) *
+            bucketMilliseconds,
+        isUtc: true,
+      );
+      if (result.isEmpty || result.last.time != bucket) {
+        result.add(MarketCandle(
+          time: bucket,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        ));
+        continue;
+      }
+      final previous = result.last;
+      result[result.length - 1] = MarketCandle(
+        time: bucket,
+        open: previous.open,
+        high: previous.high > candle.high ? previous.high : candle.high,
+        low: previous.low < candle.low ? previous.low : candle.low,
+        close: candle.close,
+        volume: (previous.volume ?? 0) + (candle.volume ?? 0),
+      );
+    }
+    return result;
+  }
+
+  Future<void> connectPrice({
+    required String symbol,
+    required void Function(double price) onPrice,
+    required void Function(MarketFeedStatus status) onStatus,
+    required void Function(String message) onError,
+  }) async {
+    await disconnectPrice();
+    if (!isConfigured) {
+      onStatus(MarketFeedStatus.missingKey);
+      return;
+    }
+
+    final generation = ++_socketGeneration;
+    onStatus(MarketFeedStatus.connecting);
+    try {
+      final uri =
+          Uri.parse('$_socketUrl?apikey=${Uri.encodeQueryComponent(_apiKey)}');
+      final channel = WebSocketChannel.connect(uri);
+      _channel = channel;
+      await channel.ready.timeout(const Duration(seconds: 15));
+      if (_disposed || generation != _socketGeneration) {
+        await channel.sink.close();
+        return;
+      }
+
+      channel.sink.add(jsonEncode(<String, dynamic>{
+        'action': 'subscribe',
+        'params': <String, String>{
+          'symbols': normalizeSymbol(symbol),
+        },
+      }));
+
+      _socketSubscription = channel.stream.listen(
+        (event) {
+          if (_disposed || generation != _socketGeneration) return;
+          try {
+            final decoded = jsonDecode(event.toString());
+            if (decoded is! Map<String, dynamic>) return;
+            if (decoded['event'] == 'price') {
+              final price = double.tryParse(decoded['price']?.toString() ?? '');
+              if (price != null && price.isFinite) {
+                onStatus(MarketFeedStatus.live);
+                onPrice(price);
+              }
+              return;
+            }
+            if (decoded['event'] == 'subscribe-status' &&
+                decoded['status'] == 'ok') {
+              onStatus(MarketFeedStatus.historyOnly);
+              return;
+            }
+            if (decoded['status'] == 'error' || decoded['event'] == 'error') {
+              onStatus(MarketFeedStatus.historyOnly);
+              onError(decoded['message']?.toString() ??
+                  'Twelve Data WebSocket error.');
+            }
+          } catch (_) {
+            // Ignore non-JSON heartbeat frames.
+          }
+        },
+        onError: (Object error) {
+          if (_disposed || generation != _socketGeneration) return;
+          onStatus(MarketFeedStatus.historyOnly);
+          onError('Live stream unavailable: $error');
+          _scheduleReconnect(
+            generation: generation,
+            symbol: symbol,
+            onPrice: onPrice,
+            onStatus: onStatus,
+            onError: onError,
+          );
+        },
+        onDone: () {
+          if (_disposed || generation != _socketGeneration) return;
+          onStatus(MarketFeedStatus.historyOnly);
+          _scheduleReconnect(
+            generation: generation,
+            symbol: symbol,
+            onPrice: onPrice,
+            onStatus: onStatus,
+            onError: onError,
+          );
+        },
+        cancelOnError: true,
+      );
+    } catch (error) {
+      if (_disposed || generation != _socketGeneration) return;
+      onStatus(MarketFeedStatus.historyOnly);
+      onError('Live stream unavailable: $error');
+      _scheduleReconnect(
+        generation: generation,
+        symbol: symbol,
+        onPrice: onPrice,
+        onStatus: onStatus,
+        onError: onError,
+      );
+    }
+  }
+
+  void _scheduleReconnect({
+    required int generation,
+    required String symbol,
+    required void Function(double price) onPrice,
+    required void Function(MarketFeedStatus status) onStatus,
+    required void Function(String message) onError,
+  }) {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 8), () {
+      if (_disposed || generation != _socketGeneration) return;
+      connectPrice(
+        symbol: symbol,
+        onPrice: onPrice,
+        onStatus: onStatus,
+        onError: onError,
+      );
+    });
+  }
+
+  Future<void> disconnectPrice() async {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _socketGeneration++;
+    await _socketSubscription?.cancel();
+    _socketSubscription = null;
+    final channel = _channel;
+    _channel = null;
+    await channel?.sink.close();
+  }
+
+  Future<void> dispose() async {
+    _disposed = true;
+    await disconnectPrice();
+    _client.close();
+  }
+}

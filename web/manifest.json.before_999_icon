@@ -1,0 +1,8 @@
+{
+  "name": "999 Trading Intelligence",
+  "short_name": "999 Trading",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#111625",
+  "theme_color": "#111625"
+}

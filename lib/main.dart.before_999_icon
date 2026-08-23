@@ -1,0 +1,3112 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+
+import 'services/markeela_trading_service.dart';
+import 'services/twelve_data_service.dart';
+
+void main() => runApp(const TradingIntelligenceApp());
+
+class TradingIntelligenceApp extends StatelessWidget {
+  const TradingIntelligenceApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '999 Trading Intelligence',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF090E1D),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF6D67FF),
+          secondary: Color(0xFFC35CFF),
+          surface: Color(0xFF151D35),
+        ),
+        dividerColor: const Color(0xFF293451),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF111A31),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF2C385B)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF706CFF)),
+          ),
+        ),
+      ),
+      home: const TemporaryAuthGate(),
+    );
+  }
+}
+
+// TEMPORARY_999_DEMO_AUTH_V1
+class TemporaryAuthGate extends StatefulWidget {
+  const TemporaryAuthGate({super.key});
+
+  @override
+  State<TemporaryAuthGate> createState() => _TemporaryAuthGateState();
+}
+
+class _TemporaryAuthGateState extends State<TemporaryAuthGate> {
+  bool _authenticated = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_authenticated) {
+      return TradingHome(
+        onLogout: () => setState(() => _authenticated = false),
+      );
+    }
+
+    return DemoLoginScreen(
+      onAuthenticated: () => setState(() => _authenticated = true),
+    );
+  }
+}
+
+class DemoLoginScreen extends StatefulWidget {
+  const DemoLoginScreen({super.key, required this.onAuthenticated});
+
+  final VoidCallback onAuthenticated;
+
+  @override
+  State<DemoLoginScreen> createState() => _DemoLoginScreenState();
+}
+
+class _DemoLoginScreenState extends State<DemoLoginScreen> {
+  static const _demoEmail = 'demo@999intelligence.com';
+  static const _demoPassword = '999demo';
+
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  bool _hidePassword = true;
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: _demoEmail);
+    _passwordController = TextEditingController(text: _demoPassword);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+
+    final valid = _emailController.text.trim().toLowerCase() == _demoEmail &&
+        _passwordController.text == _demoPassword;
+    if (valid) {
+      widget.onAuthenticated();
+      return;
+    }
+
+    setState(() {
+      _submitting = false;
+      _error = 'Use the temporary demo credentials shown below.';
+    });
+  }
+
+  void _futureAuthNotice() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('This option activates with the Supabase auth upgrade.'),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.topRight,
+            radius: 1.35,
+            colors: [Color(0xFF243B86), Color(0xFF101A35), Color(0xFF080D1C)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(22),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(28, 26, 28, 22),
+                  decoration: BoxDecoration(
+                    color: const Color(0xF2111A31),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFF344A83)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x66000000),
+                        blurRadius: 34,
+                        offset: Offset(0, 18),
+                      ),
+                      BoxShadow(
+                        color: Color(0x336D67FF),
+                        blurRadius: 40,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Align(
+                        child: CircleAvatar(
+                          radius: 31,
+                          backgroundColor: Color(0xFF080C18),
+                          child: Text(
+                            '999',
+                            style: TextStyle(
+                              color: Color(0xFFFFCA3A),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '999 TRADING INTELLIGENCE',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        'Powered by 999 Intelligence Network',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0x3327C887),
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(color: const Color(0xFF2E7B66)),
+                        ),
+                        child: const Text(
+                          'TEMPORARY DEMO ACCESS',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFF77F2A3),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.alternate_email),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: _hidePassword,
+                        onSubmitted: (_) => _signIn(),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _hidePassword = !_hidePassword),
+                            icon: Icon(
+                              _hidePassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFFFF7185)),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _submitting ? null : _signIn,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                          backgroundColor: const Color(0xFF665EFF),
+                        ),
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.login),
+                        label: Text(_submitting ? 'ENTERING...' : 'ENTER DEMO'),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D1528),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Demo email: demo@999intelligence.com\nPassword: 999demo',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 11, color: Colors.white60),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: _futureAuthNotice,
+                            child: const Text('Forgot password?'),
+                          ),
+                          TextButton(
+                            onPressed: _futureAuthNotice,
+                            child: const Text('Create account'),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        'Temporary local access • Supabase authentication comes next',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 10, color: Colors.white38),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TradingHome extends StatefulWidget {
+  const TradingHome({super.key, this.onLogout});
+
+  final VoidCallback? onLogout;
+
+  @override
+  State<TradingHome> createState() => _TradingHomeState();
+}
+
+class _TradingHomeState extends State<TradingHome> {
+  static const _assets = <AssetQuote>[
+    AssetQuote('EUR/USD', 84, 1.15362, 0.32),
+    AssetQuote('AUD/JPY', 84, 96.184, -0.18),
+    AssetQuote('GBP/USD', 84, 1.34782, 0.27),
+    AssetQuote('AUD/CAD', 45, 0.90218, 0.14),
+    AssetQuote('AUD/USD', 75, 0.65128, 0.41),
+    AssetQuote('USD/CHF', 74, 0.80872, -0.09),
+    AssetQuote('CAD/CHF', 35, 0.58921, 0.22),
+    AssetQuote('EUR/JPY', 55, 170.481, 0.35),
+    AssetQuote('USD/JPY', 82, 147.786, -0.12),
+    AssetQuote('BTC/USD', 91, 118420.0, 0.68),
+  ];
+
+  final MarkeelaTradingService ai = MarkeelaTradingService();
+  final TwelveDataService _marketData = TwelveDataService();
+  final List<ChartDrawing> _drawings = <ChartDrawing>[];
+  final Map<String, double> _livePrices = <String, double>{};
+  List<Offset> _activeDrawing = <Offset>[];
+  List<MarketCandle> _marketCandles = <MarketCandle>[];
+  late final TextEditingController _amountController;
+  Timer? _marketTimer;
+  Timer? _historyRefreshTimer;
+
+  String _symbol = 'EUR/USD';
+  String _timeframe = 'M1';
+  String _strategy = 'Martingale';
+  String _accountMode = 'DEMO';
+  String _chartStyle = 'Candles';
+  String _aiText = 'Agent Markeela ready — tap Analyze for a market scan.';
+  int _trades = 5;
+  int _marketTick = 0;
+  int _expirySeconds = 60;
+  int _remainingSeconds = 60;
+  int _selectedTool = 0;
+  int _navIndex = 2;
+  double _amount = 1;
+  double _zoom = 1;
+  double _chartPan = 0;
+  double _gestureStartZoom = 1;
+  double? _livePrice;
+  bool _aiRunning = false;
+  bool _loadingCandles = false;
+  bool _focusMode = false;
+  bool _showStrategies = true;
+  bool _ema9 = true;
+  bool _ema21 = true;
+  bool _bollinger = true;
+  bool _zigZag = true;
+  bool _showRsi = true;
+  bool _showVolume = false;
+  bool _showStochastic = true;
+  bool _showMacd = true;
+  MarketFeedStatus _feedStatus = MarketFeedStatus.connecting;
+  String? _feedError;
+  int _historyRequest = 0;
+
+  AssetQuote get _asset => _assets.firstWhere((item) => item.symbol == _symbol);
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(text: '1.00');
+    _marketTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _marketTick++;
+        _remainingSeconds =
+            _remainingSeconds <= 1 ? _expirySeconds : _remainingSeconds - 1;
+      });
+    });
+    _historyRefreshTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _loadCandleHistory(showLoading: false),
+    );
+    unawaited(_connectMarketData());
+  }
+
+  @override
+  void dispose() {
+    _marketTimer?.cancel();
+    _historyRefreshTimer?.cancel();
+    unawaited(_marketData.dispose());
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _connectMarketData() async {
+    if (!_marketData.isConfigured) {
+      if (!mounted) return;
+      setState(() {
+        _feedStatus = MarketFeedStatus.missingKey;
+        _feedError = 'Start with --dart-define=TWELVE_DATA_API_KEY=YOUR_KEY';
+      });
+      return;
+    }
+
+    final requestedSymbol = _symbol;
+    await _loadCandleHistory();
+    if (!mounted || requestedSymbol != _symbol) return;
+    unawaited(
+      _marketData.connectPrice(
+        symbol: requestedSymbol,
+        onPrice: (price) {
+          if (requestedSymbol == _symbol) _handleLivePrice(price);
+        },
+        onStatus: (status) {
+          if (!mounted || requestedSymbol != _symbol) return;
+          setState(() => _feedStatus = status);
+        },
+        onError: (message) {
+          if (!mounted || requestedSymbol != _symbol) return;
+          setState(() => _feedError = message);
+        },
+      ),
+    );
+  }
+
+  Future<void> _loadCandleHistory({bool showLoading = true}) async {
+    if (!_marketData.isConfigured) return;
+    final request = ++_historyRequest;
+    final requestedSymbol = _symbol;
+    final requestedTimeframe = _timeframe;
+    if (mounted && showLoading) {
+      setState(() {
+        _loadingCandles = true;
+        _feedError = null;
+      });
+    }
+    try {
+      final candles = await _marketData.fetchCandles(
+        symbol: requestedSymbol,
+        timeframe: requestedTimeframe,
+      );
+      if (!mounted ||
+          request != _historyRequest ||
+          requestedSymbol != _symbol ||
+          requestedTimeframe != _timeframe) {
+        return;
+      }
+      final price = candles.last.close;
+      setState(() {
+        _marketCandles = candles;
+        _livePrice = price;
+        _livePrices[requestedSymbol] = price;
+        _loadingCandles = false;
+        if (_feedStatus != MarketFeedStatus.live) {
+          _feedStatus = MarketFeedStatus.historyOnly;
+        }
+      });
+    } catch (error) {
+      if (!mounted || request != _historyRequest) return;
+      setState(() {
+        _loadingCandles = false;
+        _feedStatus = MarketFeedStatus.error;
+        _feedError = error.toString();
+      });
+    }
+  }
+
+  void _handleLivePrice(double price) {
+    if (!mounted || !price.isFinite || price <= 0) return;
+    final now = DateTime.now().toUtc();
+    final interval = _marketData.durationFor(_timeframe);
+    final bucketMilliseconds = interval.inMilliseconds;
+    final bucket = DateTime.fromMillisecondsSinceEpoch(
+      (now.millisecondsSinceEpoch ~/ bucketMilliseconds) * bucketMilliseconds,
+      isUtc: true,
+    );
+
+    setState(() {
+      _livePrice = price;
+      _livePrices[_symbol] = price;
+      _feedStatus = MarketFeedStatus.live;
+      _feedError = null;
+      if (_marketCandles.isEmpty) return;
+      final candles = List<MarketCandle>.from(_marketCandles);
+      final last = candles.last;
+      if (last.time.isBefore(bucket)) {
+        candles.add(MarketCandle(
+          time: bucket,
+          open: last.close,
+          high: math.max(last.close, price).toDouble(),
+          low: math.min(last.close, price).toDouble(),
+          close: price,
+        ));
+      } else {
+        candles[candles.length - 1] = last.copyWith(
+          high: math.max(last.high, price).toDouble(),
+          low: math.min(last.low, price).toDouble(),
+          close: price,
+        );
+      }
+      _marketCandles = candles.length > 240
+          ? candles.sublist(candles.length - 240)
+          : candles;
+    });
+  }
+
+  void _selectSymbol(String symbol) {
+    if (symbol == _symbol) return;
+    unawaited(_marketData.disconnectPrice());
+    setState(() {
+      _symbol = symbol;
+      _marketCandles = <MarketCandle>[];
+      _livePrice = _livePrices[symbol];
+      _zoom = 1;
+      _chartPan = 0;
+    });
+    unawaited(_connectMarketData());
+  }
+
+  void _selectTimeframe(String timeframe) {
+    if (timeframe == _timeframe) return;
+    setState(() {
+      _timeframe = timeframe;
+      _marketCandles = <MarketCandle>[];
+      _zoom = 1;
+      _chartPan = 0;
+    });
+    unawaited(_loadCandleHistory());
+  }
+
+  void _setZoom(double value) {
+    setState(() {
+      _zoom = value.clamp(.60, 2.50).toDouble();
+    });
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _zoom = 1;
+      _chartPan = 0;
+    });
+  }
+
+  void _handleChartPointerSignal(PointerSignalEvent event) {
+    if (_drawingMode || event is! PointerScrollEvent) return;
+    final factor = event.scrollDelta.dy > 0 ? .90 : 1.10;
+    _setZoom(_zoom * factor);
+  }
+
+  void _startChartGesture(ScaleStartDetails details) {
+    _gestureStartZoom = _zoom;
+  }
+
+  void _updateChartGesture(ScaleUpdateDetails details) {
+    if (_drawingMode) return;
+    final nextZoom =
+        (_gestureStartZoom * details.scale).clamp(.60, 2.50).toDouble();
+    final isDrag = (details.scale - 1).abs() < .002;
+    setState(() {
+      _zoom = nextZoom;
+      if (isDrag && details.focalPointDelta.dx.abs() > .1) {
+        _chartPan = (_chartPan + details.focalPointDelta.dx / 520)
+            .clamp(0.0, 1.0)
+            .toDouble();
+      }
+    });
+  }
+
+  bool get _drawingMode =>
+      _selectedTool == 2 || _selectedTool == 3 || _selectedTool == 4;
+
+  Offset _normalizePoint(Offset point, Size size) {
+    return Offset(
+      (point.dx / size.width).clamp(0.0, 1.0).toDouble(),
+      (point.dy / size.height).clamp(0.0, 1.0).toDouble(),
+    );
+  }
+
+  void _startChartDrawing(DragStartDetails details, Size size) {
+    if (_selectedTool != 2 && _selectedTool != 4) return;
+    setState(() {
+      _activeDrawing = <Offset>[_normalizePoint(details.localPosition, size)];
+    });
+  }
+
+  void _updateChartDrawing(DragUpdateDetails details, Size size) {
+    if (_activeDrawing.isEmpty) return;
+    final point = _normalizePoint(details.localPosition, size);
+    setState(() {
+      if (_selectedTool == 4) {
+        _activeDrawing = <Offset>[_activeDrawing.first, point];
+      } else {
+        _activeDrawing = <Offset>[..._activeDrawing, point];
+      }
+    });
+  }
+
+  void _finishChartDrawing() {
+    if (_activeDrawing.length < 2) {
+      setState(() => _activeDrawing = <Offset>[]);
+      return;
+    }
+    setState(() {
+      _drawings.add(
+        ChartDrawing(
+          tool: _selectedTool,
+          points: List<Offset>.unmodifiable(_activeDrawing),
+        ),
+      );
+      _activeDrawing = <Offset>[];
+    });
+  }
+
+  void _addHorizontalDrawing(TapDownDetails details, Size size) {
+    if (_selectedTool != 3) return;
+    final y = _normalizePoint(details.localPosition, size).dy;
+    setState(() {
+      _drawings.add(
+        ChartDrawing(
+          tool: 3,
+          points: <Offset>[Offset(0, y), Offset(1, y)],
+        ),
+      );
+    });
+  }
+
+  void _undoDrawing() {
+    setState(() {
+      if (_drawings.isNotEmpty) _drawings.removeLast();
+      _activeDrawing = <Offset>[];
+      _selectedTool = 0;
+    });
+    _notice(_drawings.isEmpty
+        ? 'Chart drawing cleared.'
+        : 'Last chart drawing removed.');
+  }
+
+  void _openChartSettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF121A30),
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ListTile(
+                leading: Icon(Icons.tune),
+                title: Text('Chart settings'),
+                subtitle: Text('999 Advanced Twin display controls'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.center_focus_strong),
+                title: const Text('Reset chart zoom'),
+                subtitle: const Text('Return the chart to 100% view.'),
+                onTap: () {
+                  _resetZoom();
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              const ListTile(
+                leading: Icon(Icons.dashboard_customize_outlined),
+                title: Text('Fixed one-page workspace'),
+                subtitle: Text(
+                  'Only the chart zooms and pans. The page stays locked in place.',
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.layers_clear),
+                title: const Text('Clear all drawings'),
+                onTap: () {
+                  setState(() {
+                    _drawings.clear();
+                    _activeDrawing = <Offset>[];
+                    _selectedTool = 0;
+                  });
+                  Navigator.pop(sheetContext);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _changeExpiry(int seconds) {
+    setState(() {
+      _expirySeconds = (_expirySeconds + seconds).clamp(30, 300).toInt();
+      _remainingSeconds = _expirySeconds;
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainder = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainder.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _runAi() async {
+    setState(() => _aiText = 'Agent Markeela is scanning $_symbol...');
+    final result = await ai.analyze(_symbol, _timeframe);
+    if (!mounted) return;
+    setState(() => _aiText = result);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(result)));
+  }
+
+  void _notice(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _toggleAiTrading() {
+    if (_accountMode == 'LIVE') {
+      _notice(
+        'LIVE Twelve Data prices are connected. Add a broker execution API before starting live AI orders.',
+      );
+      return;
+    }
+    setState(() => _aiRunning = !_aiRunning);
+    _notice(
+      _aiRunning
+          ? 'AI simulation started: $_trades trade${_trades == 1 ? '' : 's'} at \$${_amount.toStringAsFixed(2)}.'
+          : 'AI simulation stopped.',
+    );
+  }
+
+  void _quickTrade(String direction) {
+    if (_accountMode == 'LIVE') {
+      _notice(
+        'LIVE data is connected, but $direction is locked until a broker execution API is added.',
+      );
+      return;
+    }
+    _notice(
+      '$direction demo trade queued on $_symbol for \$${_amount.toStringAsFixed(2)}.',
+    );
+  }
+
+  void _handleNavigation(int index) {
+    setState(() => _navIndex = index);
+    if (index == 2) return;
+    const titles = ['Trades', 'Signals', 'AI Trader', 'Social', 'More'];
+    final title = titles[index];
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF11182B),
+      showDragHandle: true,
+      builder: (context) => SizedBox(
+        height: 280,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 12),
+              Text(
+                index == 0
+                    ? 'Demo trade history and active AI simulations appear here.'
+                    : index == 1
+                        ? 'Markeela ranks live-ready setups by trend, momentum, and confidence.'
+                        : index == 3
+                            ? 'Social trading rooms and shared strategies appear here.'
+                            : 'Account, deposits, settings, support, and security tools.',
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('DONE'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 840;
+            return Column(
+              children: [
+                _topBar(compact),
+                if (!_focusMode) _assetStrip(),
+                Expanded(
+                  child: compact ? _compactWorkspace() : _desktopWorkspace(),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: _focusMode
+          ? null
+          : NavigationBar(
+              height: 56,
+              selectedIndex: _navIndex,
+              onDestinationSelected: _handleNavigation,
+              destinations: const [
+                NavigationDestination(
+                    icon: Icon(Icons.swap_vert), label: 'Trades'),
+                NavigationDestination(
+                    icon: Icon(Icons.sensors), label: 'Signals'),
+                NavigationDestination(
+                    icon: Icon(Icons.auto_graph), label: 'AI Trader'),
+                NavigationDestination(
+                    icon: Icon(Icons.groups), label: 'Social'),
+                NavigationDestination(
+                    icon: Icon(Icons.more_horiz), label: 'More'),
+              ],
+            ),
+    );
+  }
+
+  Widget _topBar(bool compact) {
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF101A35), Color(0xFF172A5B)],
+        ),
+        border: Border(bottom: BorderSide(color: Color(0xFF2B3962))),
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            radius: 19,
+            backgroundColor: Color(0xFF080C18),
+            child: Text('999',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFFFCA3A))),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  compact ? '999 TRADING AI' : '999 TRADING INTELLIGENCE',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w900),
+                ),
+                if (!compact)
+                  const Text(
+                    'Powered by 999 Intelligence Network',
+                    style: TextStyle(fontSize: 10, color: Colors.white54),
+                  ),
+              ],
+            ),
+          ),
+          _modeButton(),
+          const SizedBox(width: 7),
+          _feedBadge(compact),
+          if (!compact) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0x9910192D),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _accountMode == 'DEMO' ? 'QT DEMO' : 'QT LIVE',
+                    style: const TextStyle(fontSize: 9, color: Colors.white54),
+                  ),
+                  Text(
+                    _accountMode == 'DEMO'
+                        ? '\$10,000.00 USD'
+                        : 'DATA FEED ONLY',
+                    style: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: () =>
+                  _notice('Top Up opens after payment setup is connected.'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF27C887),
+                  foregroundColor: Colors.white),
+              icon: const Icon(Icons.account_balance_wallet, size: 17),
+              label: const Text('TOP UP'),
+            ),
+          ],
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: _runAi,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF665EFF),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 15),
+            ),
+            icon: const Icon(Icons.auto_awesome, size: 17),
+            label: compact ? const SizedBox.shrink() : const Text('Markeela'),
+          ),
+          if (widget.onLogout != null) ...[
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: widget.onLogout,
+              tooltip: 'Log out of demo',
+              icon: const Icon(Icons.logout, size: 19),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _modeButton() {
+    return PopupMenuButton<String>(
+      tooltip: 'Account mode',
+      color: const Color(0xFF17213A),
+      initialValue: _accountMode,
+      onSelected: (value) {
+        setState(() => _accountMode = value);
+        _notice(
+          value == 'LIVE'
+              ? 'LIVE uses Twelve Data prices. Broker execution is not connected yet.'
+              : 'DEMO uses Twelve Data prices with simulated order execution.',
+        );
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'DEMO', child: Text('DEMO account')),
+        PopupMenuItem(value: 'LIVE', child: Text('LIVE account')),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: _accountMode == 'DEMO'
+              ? const Color(0xFF27365D)
+              : const Color(0xFF175A45),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFF41527F)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _accountMode == 'DEMO' ? Icons.science_outlined : Icons.bolt,
+              size: 16,
+              color: _accountMode == 'DEMO'
+                  ? const Color(0xFF9CB8FF)
+                  : const Color(0xFF55E3A4),
+            ),
+            const SizedBox(width: 5),
+            Text(_accountMode,
+                style:
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _feedBadge(bool compact) {
+    final (label, color, icon) = switch (_feedStatus) {
+      MarketFeedStatus.live => (
+          '999 LIVE',
+          const Color(0xFF1D8A63),
+          Icons.sensors
+        ),
+      MarketFeedStatus.historyOnly => (
+          '999 REST',
+          const Color(0xFF375C9B),
+          Icons.cloud_done_outlined
+        ),
+      MarketFeedStatus.connecting => (
+          '12D ...',
+          const Color(0xFF6D5B23),
+          Icons.sync
+        ),
+      MarketFeedStatus.missingKey => (
+          'ADD KEY',
+          const Color(0xFF8A5420),
+          Icons.key
+        ),
+      MarketFeedStatus.error => (
+          '12D ERROR',
+          const Color(0xFF8B3042),
+          Icons.cloud_off
+        ),
+    };
+    return Tooltip(
+      message: _feedError ??
+          (_feedStatus == MarketFeedStatus.live
+              ? 'Real-time Twelve Data price stream'
+              : 'Twelve Data market feed'),
+      child: InkWell(
+        onTap: () => _notice(
+          _feedError ??
+              (_feedStatus == MarketFeedStatus.live
+                  ? 'Twelve Data is streaming $_symbol in real time.'
+                  : 'Twelve Data candle history is active.'),
+        ),
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14),
+              if (!compact) ...[
+                const SizedBox(width: 5),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 9, fontWeight: FontWeight.w900)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _assetStrip() {
+    return Container(
+      height: 78,
+      color: const Color(0xFF10172A),
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: _assets.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final item = _assets[index];
+          final selected = item.symbol == _symbol;
+          return InkWell(
+            onTap: () {
+              _selectSymbol(item.symbol);
+            },
+            borderRadius: BorderRadius.circular(9),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 142,
+              padding: const EdgeInsets.fromLTRB(9, 7, 7, 6),
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFF24345D)
+                    : const Color(0xFF17213A),
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFF7772FF)
+                      : const Color(0xFF293858),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.symbol,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w800)),
+                        const Spacer(),
+                        Text('+${item.payout}%',
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF7CF0A6))),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: 62,
+                    height: 42,
+                    child: CustomPaint(
+                      painter: SparkPainter(
+                          seed: item.symbol.hashCode, rising: item.change >= 0),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _desktopWorkspace() {
+    return LayoutBuilder(
+      builder: (context, viewport) {
+        final indicatorCount = _focusMode
+            ? 0
+            : <bool>[
+                _showRsi,
+                _showVolume,
+                _showStochastic,
+                _showMacd,
+              ].where((visible) => visible).length;
+        final indicatorBudget = indicatorCount == 0
+            ? 0.0
+            : math.min(
+                indicatorCount * 72.0,
+                viewport.maxHeight * 0.25,
+              );
+        final indicatorHeight = indicatorCount == 0
+            ? 0.0
+            : indicatorCount >= 3
+                ? 50.0
+                : (indicatorBudget / indicatorCount - 4)
+                    .clamp(54.0, 72.0)
+                    .toDouble();
+
+        Widget fixedIndicator(String title, int variant) => _indicatorPanel(
+              title,
+              variant,
+              height: indicatorHeight,
+              bottomMargin: 0,
+            );
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!_focusMode) _verticalTools(),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  children: [
+                    Expanded(child: _chartPanel()),
+                    if (!_focusMode && _showRsi) ...[
+                      const SizedBox(height: 4),
+                      fixedIndicator('RSI 14', 0),
+                    ],
+                    if (!_focusMode && _showVolume) ...[
+                      const SizedBox(height: 4),
+                      fixedIndicator('Volume 10', 3),
+                    ],
+                    if (!_focusMode && _showStochastic) ...[
+                      const SizedBox(height: 4),
+                      fixedIndicator('Stochastic Oscillator 14 3 3', 1),
+                    ],
+                    if (!_focusMode && _showMacd) ...[
+                      const SizedBox(height: 4),
+                      fixedIndicator('MACD 5 13 5', 2),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (!_focusMode)
+              SizedBox(
+                width: 260,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(width: 254, child: _tradePanel()),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _compactWorkspace() {
+    return ListView(
+      padding: const EdgeInsets.all(8),
+      children: [
+        _horizontalTools(),
+        const SizedBox(height: 8),
+        _chartPanel(height: _focusMode ? 570 : 390),
+        if (!_focusMode) ...[
+          const SizedBox(height: 8),
+          _tradePanel(),
+          const SizedBox(height: 8),
+          if (_showRsi) _indicatorPanel('RSI 14', 0),
+          if (_showVolume) _indicatorPanel('Volume 10', 3),
+          if (_showStochastic)
+            _indicatorPanel('Stochastic Oscillator 14 3 3', 1),
+          if (_showMacd) _indicatorPanel('MACD 5 13 5', 2),
+        ],
+      ],
+    );
+  }
+
+  Widget _verticalTools() {
+    const icons = [
+      Icons.show_chart,
+      Icons.candlestick_chart,
+      Icons.edit,
+      Icons.horizontal_rule,
+      Icons.timeline,
+      Icons.undo,
+      Icons.settings_outlined,
+    ];
+    return Container(
+      width: 54,
+      color: const Color(0xFF0E1528),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: icons.length,
+        itemBuilder: (_, index) => _toolButton(icons[index], index),
+      ),
+    );
+  }
+
+  Widget _horizontalTools() {
+    const icons = [
+      Icons.show_chart,
+      Icons.candlestick_chart,
+      Icons.edit,
+      Icons.horizontal_rule,
+      Icons.timeline,
+      Icons.undo,
+      Icons.settings_outlined,
+    ];
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E1528),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: icons.length,
+        itemBuilder: (_, index) => _toolButton(icons[index], index),
+      ),
+    );
+  }
+
+  Widget _toolButton(IconData icon, int index) {
+    final selected = index == _selectedTool;
+    return Tooltip(
+      message: const [
+        'Cursor',
+        'Chart type',
+        'Draw',
+        'Horizontal line',
+        'Trend line',
+        'Undo',
+        'Chart settings',
+      ][index],
+      child: InkWell(
+        onTap: () {
+          if (index == 1) {
+            setState(() {
+              _selectedTool = 0;
+              _chartStyle = _chartStyle == 'Candles' ? 'Line' : 'Candles';
+            });
+          } else if (index == 5) {
+            _undoDrawing();
+          } else if (index == 6) {
+            setState(() => _selectedTool = 0);
+            _openChartSettings();
+          } else {
+            setState(() => _selectedTool = index);
+            _notice('${const [
+              'Cursor',
+              'Chart type',
+              'Drawing pencil',
+              'Horizontal line',
+              'Trend line',
+              'Undo',
+              'Chart settings'
+            ][index]} selected.');
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 48,
+          height: 48,
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFF273766) : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+            border:
+                selected ? Border.all(color: const Color(0xFF7772FF)) : null,
+          ),
+          child: Icon(icon,
+              size: 20,
+              color: selected ? const Color(0xFFB4C3FF) : Colors.white60),
+        ),
+      ),
+    );
+  }
+
+  Widget _chartPanel({double? height}) {
+    return Container(
+      height: height == null ? null : math.max(320, height),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFF111A31),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF2A385C)),
+      ),
+      child: Column(
+        children: [
+          _chartToolbar(),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) => Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(color: const Color(0xFF111A31)),
+                  ),
+                  Positioned.fill(
+                    child: Listener(
+                      onPointerSignal: _handleChartPointerSignal,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.grab,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onScaleStart:
+                              _drawingMode ? null : _startChartGesture,
+                          onScaleUpdate:
+                              _drawingMode ? null : _updateChartGesture,
+                          onDoubleTap: _drawingMode ? null : _resetZoom,
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            child: CustomPaint(
+                              painter: MarketChartPainter(
+                                asset: _asset,
+                                marketCandles: _marketCandles,
+                                livePrice: _livePrice,
+                                timeframe: _timeframe,
+                                tick: _marketTick,
+                                chartStyle: _chartStyle,
+                                ema9: _ema9,
+                                ema21: _ema21,
+                                bollinger: _bollinger,
+                                zigZag: _zigZag,
+                                remainingSeconds: _remainingSeconds,
+                                zoom: _zoom,
+                                pan: _chartPan,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: DrawingPainter(
+                          drawings: _drawings,
+                          activePoints: _activeDrawing,
+                          activeTool: _selectedTool,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_drawingMode)
+                    Positioned.fill(
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.precise,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: _selectedTool == 3
+                              ? (details) => _addHorizontalDrawing(
+                                    details,
+                                    constraints.biggest,
+                                  )
+                              : null,
+                          onPanStart: _selectedTool == 2 || _selectedTool == 4
+                              ? (details) => _startChartDrawing(
+                                    details,
+                                    constraints.biggest,
+                                  )
+                              : null,
+                          onPanUpdate: _selectedTool == 2 || _selectedTool == 4
+                              ? (details) => _updateChartDrawing(
+                                    details,
+                                    constraints.biggest,
+                                  )
+                              : null,
+                          onPanEnd: _selectedTool == 2 || _selectedTool == 4
+                              ? (_) => _finishChartDrawing()
+                              : null,
+                          onPanCancel: _selectedTool == 2 || _selectedTool == 4
+                              ? _finishChartDrawing
+                              : null,
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    left: 12,
+                    right: 92,
+                    top: 10,
+                    child: _aiBanner(),
+                  ),
+                  if (_loadingCandles)
+                    const Positioned(
+                      left: 12,
+                      top: 42,
+                      child: SizedBox(
+                        width: 96,
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                    ),
+                  if (_showStrategies)
+                    Positioned(left: 12, top: 62, child: _strategyOverlay()),
+                  Positioned(
+                    right: 10,
+                    top: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _displayPrice(),
+                          style: const TextStyle(
+                            color: Color(0xFFAED0FF),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF245A4A),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            _timeframe,
+                            style: const TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(right: 10, bottom: 10, child: _zoomControls()),
+                  if (_drawingMode)
+                    Positioned(
+                      left: 12,
+                      bottom: 29,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xE6D7F429),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          _selectedTool == 2
+                              ? 'PENCIL ACTIVE'
+                              : _selectedTool == 3
+                                  ? 'TAP TO ADD HORIZONTAL LINE'
+                                  : 'DRAG A TREND LINE',
+                          style: const TextStyle(
+                            color: Color(0xFF111827),
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const Positioned(
+                    left: 12,
+                    bottom: 10,
+                    child: Text(
+                      'Wheel/pinch to zoom • drag sideways to pan • chart stays framed',
+                      style: TextStyle(fontSize: 9, color: Colors.white54),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chartToolbar() {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 7),
+      decoration: const BoxDecoration(
+        color: Color(0xFF141E37),
+        border: Border(bottom: BorderSide(color: Color(0xFF2B3858))),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _dropdownPill(
+              value: _symbol,
+              items: _assets.map((e) => e.symbol).toList(),
+              onChanged: (value) {
+                _selectSymbol(value);
+              },
+            ),
+            const SizedBox(width: 6),
+            _dropdownPill(
+              value: _timeframe,
+              items: const ['M1', 'M3', 'M5', 'M15'],
+              onChanged: _selectTimeframe,
+            ),
+            const SizedBox(width: 6),
+            _smallIconButton(
+              icon: _chartStyle == 'Candles'
+                  ? Icons.candlestick_chart
+                  : Icons.show_chart,
+              tooltip: 'Switch chart style',
+              onPressed: () => setState(() =>
+                  _chartStyle = _chartStyle == 'Candles' ? 'Line' : 'Candles'),
+            ),
+            _indicatorMenu(),
+            _smallIconButton(
+              icon: Icons.psychology_alt,
+              tooltip: 'AI Trader Strategies',
+              active: _showStrategies,
+              onPressed: () =>
+                  setState(() => _showStrategies = !_showStrategies),
+            ),
+            _smallIconButton(
+              icon: _focusMode ? Icons.fullscreen_exit : Icons.fullscreen,
+              tooltip: _focusMode ? 'Exit chart focus' : 'Expand chart',
+              onPressed: () => setState(() => _focusMode = !_focusMode),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dropdownPill({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF202C4B),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF344568)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isDense: true,
+          borderRadius: BorderRadius.circular(10),
+          dropdownColor: const Color(0xFF1B2744),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+          items: items
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+              .toList(),
+          onChanged: (next) {
+            if (next != null) onChanged(next);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _smallIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    bool active = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        visualDensity: VisualDensity.compact,
+        onPressed: onPressed,
+        icon: Icon(icon,
+            size: 20, color: active ? const Color(0xFF9B92FF) : Colors.white70),
+      ),
+    );
+  }
+
+  Widget _indicatorMenu() {
+    return PopupMenuButton<String>(
+      tooltip: 'Indicators',
+      color: const Color(0xFF17213A),
+      icon: const Icon(Icons.functions, size: 20, color: Colors.white70),
+      onSelected: (value) {
+        setState(() {
+          switch (value) {
+            case 'EMA 9':
+              _ema9 = !_ema9;
+              break;
+            case 'EMA 21':
+              _ema21 = !_ema21;
+              break;
+            case 'Bollinger':
+              _bollinger = !_bollinger;
+              break;
+            case 'ZigZag':
+              _zigZag = !_zigZag;
+              break;
+            case 'RSI':
+              _showRsi = !_showRsi;
+              break;
+            case 'Volume':
+              _showVolume = !_showVolume;
+              break;
+            case 'Stochastic':
+              _showStochastic = !_showStochastic;
+              break;
+            case 'MACD':
+              _showMacd = !_showMacd;
+              break;
+          }
+        });
+      },
+      itemBuilder: (_) => [
+        CheckedPopupMenuItem(
+            value: 'EMA 9', checked: _ema9, child: const Text('EMA 9')),
+        CheckedPopupMenuItem(
+            value: 'EMA 21', checked: _ema21, child: const Text('EMA 21')),
+        CheckedPopupMenuItem(
+            value: 'Bollinger',
+            checked: _bollinger,
+            child: const Text('Bollinger Bands')),
+        CheckedPopupMenuItem(
+            value: 'ZigZag',
+            checked: _zigZag,
+            child: const Text('ZigZag 5-4-3')),
+        CheckedPopupMenuItem(
+            value: 'RSI', checked: _showRsi, child: const Text('RSI 14')),
+        CheckedPopupMenuItem(
+            value: 'Volume',
+            checked: _showVolume,
+            child: const Text('Volume 10')),
+        CheckedPopupMenuItem(
+            value: 'Stochastic',
+            checked: _showStochastic,
+            child: const Text('Stochastic 14-3-3')),
+        CheckedPopupMenuItem(
+            value: 'MACD',
+            checked: _showMacd,
+            child: const Text('MACD 5-13-5')),
+      ],
+    );
+  }
+
+  Widget _aiBanner() {
+    return InkWell(
+      onTap: _runAi,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xDC1D2A4B),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF354873)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.auto_awesome, size: 15, color: Color(0xFF9D91FF)),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                _aiText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 17, color: Colors.white54),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _strategyOverlay() {
+    return Container(
+      width: 174,
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: const Color(0xE6121A2D),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF344467)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x66000000), blurRadius: 12),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology_alt,
+                  size: 14, color: Color(0xFFA99EFF)),
+              const SizedBox(width: 5),
+              const Expanded(
+                child: Text('AI Trader Strategies',
+                    style:
+                        TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+              ),
+              InkWell(
+                onTap: () => setState(() => _showStrategies = false),
+                child: const Icon(Icons.close, size: 14, color: Colors.white54),
+              ),
+            ],
+          ),
+          const Divider(height: 12),
+          _strategyLine('EMA 9 / 21', _ema9 && _ema21, const Color(0xFF63E8FF)),
+          _strategyLine('Bollinger Bands', _bollinger, const Color(0xFFFFCB52)),
+          _strategyLine('ZigZag 5-4-3', _zigZag, const Color(0xFFC883FF)),
+        ],
+      ),
+    );
+  }
+
+  Widget _strategyLine(String label, bool active, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: active ? color : Colors.white24,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: 9,
+                    color: active ? Colors.white70 : Colors.white30)),
+          ),
+          Icon(active ? Icons.visibility : Icons.visibility_off,
+              size: 12, color: active ? Colors.white54 : Colors.white24),
+        ],
+      ),
+    );
+  }
+
+  Widget _zoomControls() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xE6101729),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF344466)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _zoomButton(Icons.remove, 'Zoom out', () => _setZoom(_zoom / 1.25)),
+          SizedBox(
+            width: 45,
+            child: Text(
+              '${(_zoom * 100).round()}%',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          _zoomButton(Icons.add, 'Zoom in', () => _setZoom(_zoom * 1.25)),
+          _zoomButton(Icons.center_focus_strong, 'Reset chart', _resetZoom),
+        ],
+      ),
+    );
+  }
+
+  Widget _zoomButton(
+    IconData icon,
+    String tooltip,
+    VoidCallback onPressed,
+  ) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 16, color: const Color(0xFFB8C9FF)),
+        ),
+      ),
+    );
+  }
+
+  Widget _tradePanel() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121A30),
+        border: Border.all(color: const Color(0xFF2A3858)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.smart_toy_outlined,
+                  size: 18, color: Color(0xFFA99EFF)),
+              const SizedBox(width: 7),
+              const Expanded(
+                child: Text('AI TRADE PANEL',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+              ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _aiRunning ? const Color(0xFF55E69D) : Colors.white24,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text('Expiration time',
+              style: TextStyle(fontSize: 10, color: Colors.white60)),
+          const SizedBox(height: 5),
+          Container(
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E162A),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xFF2B3858)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: 'Reduce expiration',
+                  onPressed: () => _changeExpiry(-30),
+                  icon: const Icon(Icons.remove, size: 17),
+                ),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _formatDuration(_remainingSeconds),
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        '${_expirySeconds}s trade',
+                        style:
+                            const TextStyle(fontSize: 8, color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Increase expiration',
+                  onPressed: () => _changeExpiry(30),
+                  icon: const Icon(Icons.add, size: 17),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF163D38), Color(0xFF17294A)],
+              ),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xFF2E7B66)),
+            ),
+            child: Row(
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PAYOUT',
+                        style: TextStyle(fontSize: 8, color: Colors.white54)),
+                    Text('Projected profit',
+                        style: TextStyle(fontSize: 8, color: Colors.white38)),
+                  ],
+                ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '+${_asset.payout}%',
+                      style: const TextStyle(
+                        color: Color(0xFF77F2A3),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      '+\$${(_amount * _asset.payout / 100).toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          fontSize: 9, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 13),
+          const Text('Number of trades',
+              style: TextStyle(fontSize: 10, color: Colors.white60)),
+          const SizedBox(height: 5),
+          Container(
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E162A),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0xFF2B3858)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () =>
+                      setState(() => _trades = math.max(1, _trades - 1)),
+                  icon: const Icon(Icons.remove, size: 17),
+                ),
+                Expanded(
+                  child: Text('$_trades',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
+                ),
+                IconButton(
+                  onPressed: () => setState(() => _trades++),
+                  icon: const Icon(Icons.add, size: 17),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 13),
+          const Text('Starting amount',
+              style: TextStyle(fontSize: 10, color: Colors.white60)),
+          const SizedBox(height: 5),
+          TextField(
+            controller: _amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(prefixText: '\$ '),
+            onChanged: (value) => setState(
+              () => _amount = double.tryParse(value) ?? _amount,
+            ),
+          ),
+          const SizedBox(height: 13),
+          const Text('Strategy',
+              style: TextStyle(fontSize: 10, color: Colors.white60)),
+          const SizedBox(height: 5),
+          DropdownButtonFormField<String>(
+            initialValue: _strategy,
+            dropdownColor: const Color(0xFF18223B),
+            items: const [
+              DropdownMenuItem(value: 'Martingale', child: Text('Martingale')),
+              DropdownMenuItem(value: 'Fixed Risk', child: Text('Fixed Risk')),
+              DropdownMenuItem(
+                  value: 'No Progression', child: Text('No Progression')),
+            ],
+            onChanged: (value) =>
+                setState(() => _strategy = value ?? _strategy),
+          ),
+          const SizedBox(height: 13),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D1527),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Column(
+              children: [
+                _summaryLine('Asset', _symbol),
+                _summaryLine('Payout', '${_asset.payout}%'),
+                _summaryLine(
+                    'Exposure', '\$${(_amount * _trades).toStringAsFixed(2)}'),
+                _summaryLine('Mode', _accountMode),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _toggleAiTrading,
+              style: FilledButton.styleFrom(
+                backgroundColor: _aiRunning
+                    ? const Color(0xFFE45167)
+                    : const Color(0xFFB24CF4),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              icon: Icon(_aiRunning ? Icons.stop : Icons.play_arrow),
+              label: Text(_aiRunning ? 'STOP AI' : 'START AI'),
+            ),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _quickTrade('BUY'),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF20B979)),
+                  icon: const Icon(Icons.arrow_upward, size: 17),
+                  label: const Text('BUY'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _quickTrade('SELL'),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFE34C63)),
+                  icon: const Icon(Icons.arrow_downward, size: 17),
+                  label: const Text('SELL'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _marketData.isConfigured
+                ? (_accountMode == 'DEMO'
+                    ? 'Twelve Data market feed • demo execution only.'
+                    : 'Twelve Data market feed • broker execution not connected.')
+                : 'Add your Twelve Data key to activate real market prices.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 8, color: Colors.white38),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryLine(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Text(label,
+              style: const TextStyle(fontSize: 9, color: Colors.white54)),
+          const Spacer(),
+          Text(value,
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800)),
+        ],
+      ),
+    );
+  }
+
+  Widget _indicatorPanel(
+    String title,
+    int variant, {
+    double height = 104,
+    double bottomMargin = 7,
+  }) {
+    return Container(
+      height: height,
+      margin: EdgeInsets.only(bottom: bottomMargin),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFF11182A),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: const Color(0xFF293655)),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            top: 21,
+            child: CustomPaint(
+              painter: IndicatorPainter(
+                variant: variant,
+                tick: _marketTick,
+                marketCandles: _marketCandles,
+                zoom: _zoom,
+                pan: _chartPan,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 10,
+            right: 6,
+            top: 5,
+            child: Row(
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 10, fontWeight: FontWeight.w800)),
+                const Spacer(),
+                InkWell(
+                  onTap: () => _notice('$title settings selected.'),
+                  child:
+                      const Icon(Icons.edit, size: 13, color: Colors.white54),
+                ),
+                const SizedBox(width: 10),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      if (variant == 0) _showRsi = false;
+                      if (variant == 1) _showStochastic = false;
+                      if (variant == 2) _showMacd = false;
+                      if (variant == 3) _showVolume = false;
+                    });
+                  },
+                  child:
+                      const Icon(Icons.close, size: 14, color: Colors.white54),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _displayPrice() {
+    final live = _livePrice ??
+        (_marketCandles.isEmpty ? null : _marketCandles.last.close);
+    final movement = math.sin(_marketTick * .65) * _asset.price * .00006;
+    final price = live ?? (_asset.price + movement);
+    if (price >= 10000) return price.toStringAsFixed(2);
+    if (price >= 10) return price.toStringAsFixed(3);
+    return price.toStringAsFixed(5);
+  }
+}
+
+class AssetQuote {
+  const AssetQuote(this.symbol, this.payout, this.price, this.change);
+
+  final String symbol;
+  final int payout;
+  final double price;
+  final double change;
+}
+
+class ChartDrawing {
+  const ChartDrawing({required this.tool, required this.points});
+
+  final int tool;
+  final List<Offset> points;
+}
+
+class DrawingPainter extends CustomPainter {
+  const DrawingPainter({
+    required this.drawings,
+    required this.activePoints,
+    required this.activeTool,
+  });
+
+  final List<ChartDrawing> drawings;
+  final List<Offset> activePoints;
+  final int activeTool;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final drawing in drawings) {
+      _paintLine(canvas, size, drawing.tool, drawing.points);
+    }
+    if (activePoints.isNotEmpty) {
+      _paintLine(canvas, size, activeTool, activePoints);
+    }
+  }
+
+  void _paintLine(Canvas canvas, Size size, int tool, List<Offset> points) {
+    if (points.length < 2) return;
+    final color = tool == 2
+        ? const Color(0xFFFFFFFF)
+        : tool == 3
+            ? const Color(0xFFB6F342)
+            : const Color(0xFFE6FF27);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = tool == 2 ? 2.0 : 2.7
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+    final path = Path();
+    for (int i = 0; i < points.length; i++) {
+      final point =
+          Offset(points[i].dx * size.width, points[i].dy * size.height);
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    canvas.drawPath(path, paint);
+    if (tool == 4) {
+      final start =
+          Offset(points.first.dx * size.width, points.first.dy * size.height);
+      final end =
+          Offset(points.last.dx * size.width, points.last.dy * size.height);
+      canvas.drawCircle(start, 3.5, Paint()..color = color);
+      canvas.drawCircle(end, 3.5, Paint()..color = color);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant DrawingPainter oldDelegate) => true;
+}
+
+class SparkPainter extends CustomPainter {
+  const SparkPainter({required this.seed, required this.rising});
+
+  final int seed;
+  final bool rising;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = math.Random(seed);
+    final paint = Paint()
+      ..color = rising ? const Color(0xFF4ED98A) : const Color(0xFFFF6574)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+    final path = Path();
+    double y = size.height * .62;
+    for (int i = 0; i < 14; i++) {
+      final x = i * size.width / 13;
+      y = (y + (rng.nextDouble() - .48) * 10 + (rising ? -.35 : .35))
+          .clamp(5, size.height - 5)
+          .toDouble();
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant SparkPainter oldDelegate) =>
+      oldDelegate.seed != seed || oldDelegate.rising != rising;
+}
+
+class MarketChartPainter extends CustomPainter {
+  const MarketChartPainter({
+    required this.asset,
+    required this.marketCandles,
+    required this.livePrice,
+    required this.timeframe,
+    required this.tick,
+    required this.chartStyle,
+    required this.ema9,
+    required this.ema21,
+    required this.bollinger,
+    required this.zigZag,
+    required this.remainingSeconds,
+    required this.zoom,
+    required this.pan,
+  });
+
+  final AssetQuote asset;
+  final List<MarketCandle> marketCandles;
+  final double? livePrice;
+  final String timeframe;
+  final int tick;
+  final String chartStyle;
+  final bool ema9;
+  final bool ema21;
+  final bool bollinger;
+  final bool zigZag;
+  final int remainingSeconds;
+  final double zoom;
+  final double pan;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final chartRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final background = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF182542), Color(0xFF10172A)],
+      ).createShader(chartRect);
+    canvas.drawRect(chartRect, background);
+    _drawCityBackdrop(canvas, size);
+
+    final grid = Paint()
+      ..color = const Color(0xFF2A3652)
+      ..strokeWidth = .8;
+    for (int i = 0; i <= 9; i++) {
+      final x = i * size.width / 9;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
+    }
+    for (int i = 0; i <= 7; i++) {
+      final y = i * size.height / 7;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+
+    final chartData = _makeChartData();
+    final candles = chartData.candles;
+    final left = 20.0;
+    final right = math.max(left + 40, size.width - 62);
+    final top = 50.0;
+    final bottom = math.max(top + 80, size.height - 36);
+    final step = (right - left) / candles.length;
+
+    double xFor(int index) => left + (index + .5) * step;
+    double yFor(double value) => bottom - value * (bottom - top);
+
+    final closes = candles.map((e) => e.close).toList();
+
+    if (bollinger) {
+      final upper = Path();
+      final lower = Path();
+      for (int i = 0; i < closes.length; i++) {
+        final center = _average(closes, i, 8);
+        final wave = .092 + math.sin(i * .31) * .012;
+        final a = Offset(
+          xFor(i),
+          yFor((center + wave).clamp(.05, .95).toDouble()),
+        );
+        final b = Offset(
+          xFor(i),
+          yFor((center - wave).clamp(.05, .95).toDouble()),
+        );
+        if (i == 0) {
+          upper.moveTo(a.dx, a.dy);
+          lower.moveTo(b.dx, b.dy);
+        } else {
+          upper.lineTo(a.dx, a.dy);
+          lower.lineTo(b.dx, b.dy);
+        }
+      }
+      final band = Paint()
+        ..color = const Color(0x995CD7FF)
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(upper, band);
+      canvas.drawPath(lower, band);
+    }
+
+    if (chartStyle == 'Candles') {
+      for (int i = 0; i < candles.length; i++) {
+        final candle = candles[i];
+        final x = xFor(i);
+        final openY = yFor(candle.open);
+        final closeY = yFor(candle.close);
+        final highY = yFor(candle.high);
+        final lowY = yFor(candle.low);
+        final rising = candle.close >= candle.open;
+        final color =
+            rising ? const Color(0xFF57E56D) : const Color(0xFFFF5B59);
+        final paint = Paint()
+          ..color = color
+          ..strokeWidth = 1.3;
+        canvas.drawLine(Offset(x, highY), Offset(x, lowY), paint);
+        canvas.drawRect(
+          Rect.fromLTRB(
+            x - math.max(3.8, step * .36),
+            math.min(openY, closeY),
+            x + math.max(3.8, step * .36),
+            math.max(openY, closeY) + 1.8,
+          ),
+          paint,
+        );
+      }
+    } else {
+      final linePath = Path();
+      for (int i = 0; i < closes.length; i++) {
+        final point = Offset(xFor(i), yFor(closes[i]));
+        if (i == 0) {
+          linePath.moveTo(point.dx, point.dy);
+        } else {
+          linePath.lineTo(point.dx, point.dy);
+        }
+      }
+      canvas.drawPath(
+        linePath,
+        Paint()
+          ..color = const Color(0xFF86B5FF)
+          ..strokeWidth = 2.2
+          ..style = PaintingStyle.stroke,
+      );
+    }
+
+    if (ema9) {
+      _drawMovingAverage(
+          canvas, closes, 5, xFor, yFor, const Color(0xFFFFD45A), 1.8);
+    }
+    if (ema21) {
+      _drawMovingAverage(
+          canvas, closes, 11, xFor, yFor, const Color(0xFF7C90FF), 1.8);
+    }
+    if (zigZag) {
+      final path = Path();
+      for (int i = 0; i < closes.length; i += 5) {
+        final point = Offset(xFor(i), yFor(closes[i]));
+        if (i == 0) {
+          path.moveTo(point.dx, point.dy);
+        } else {
+          path.lineTo(point.dx, point.dy);
+        }
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = const Color(0xFFC977FF)
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke,
+      );
+    }
+
+    final expirationX = size.width * .79;
+    final expirationPaint = Paint()
+      ..color = const Color(0x99FFFFFF)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(
+      Offset(expirationX, 0),
+      Offset(expirationX, bottom),
+      expirationPaint,
+    );
+    _text(
+      canvas,
+      'Expiration  ${_clock(remainingSeconds)}',
+      Offset(expirationX + 7, 54),
+      9,
+      Colors.white70,
+    );
+
+    final currentY = yFor(closes.last);
+    final priceLine = Paint()
+      ..color = const Color(0xFF6DC8FF)
+      ..strokeWidth = 1;
+    for (double x = 0; x < size.width; x += 9) {
+      canvas.drawLine(Offset(x, currentY), Offset(x + 4, currentY), priceLine);
+    }
+
+    _drawPriceScale(
+      canvas,
+      size,
+      top,
+      bottom,
+      chartData.minimumPrice,
+      chartData.maximumPrice,
+    );
+    _drawTimeScale(canvas, size, left, right, chartData.times);
+  }
+
+  _ChartData _makeChartData() {
+    if (marketCandles.length >= 2) {
+      final historyCount = marketCandles.length;
+      final maximumVisible = math.min(58, historyCount);
+      final minimumVisible = math.min(16, maximumVisible);
+      final visibleCount =
+          (34 / zoom).round().clamp(minimumVisible, maximumVisible).toInt();
+      final maxShift = historyCount - visibleCount;
+      final shift = (pan * maxShift).round().clamp(0, maxShift).toInt();
+      final end = historyCount - shift;
+      final start = end - visibleCount;
+      final visible = marketCandles.sublist(start, end);
+
+      var minimum = visible.first.low;
+      var maximum = visible.first.high;
+      for (final candle in visible.skip(1)) {
+        minimum = math.min(minimum, candle.low).toDouble();
+        maximum = math.max(maximum, candle.high).toDouble();
+      }
+      final rawRange =
+          math.max(maximum - minimum, maximum.abs() * .0001).toDouble();
+      final paddedMinimum = minimum - rawRange * .12;
+      final paddedMaximum = maximum + rawRange * .12;
+      final paddedRange = paddedMaximum - paddedMinimum;
+      double normalize(double price) {
+        return ((price - paddedMinimum) / paddedRange)
+            .clamp(.02, .98)
+            .toDouble();
+      }
+
+      return _ChartData(
+        candles: visible
+            .map((candle) => _Candle(
+                  normalize(candle.open),
+                  normalize(candle.high),
+                  normalize(candle.low),
+                  normalize(candle.close),
+                ))
+            .toList(growable: false),
+        minimumPrice: paddedMinimum,
+        maximumPrice: paddedMaximum,
+        times: visible.map((candle) => candle.time).toList(growable: false),
+      );
+    }
+
+    final seed = asset.symbol.codeUnits.fold<int>(17, (a, b) => a * 31 + b);
+    final rng = math.Random(seed);
+    final result = <_Candle>[];
+    double close = .48;
+    const historyCount = 120;
+    for (int i = 0; i < historyCount; i++) {
+      final open = close;
+      var movement = (rng.nextDouble() - .48) * .14;
+      movement += math.sin(i * .43 + seed % 7) * .018;
+      if (i == historyCount - 1) {
+        movement += math.sin(tick * .62) * .035;
+      }
+      close = (open + movement).clamp(.12, .88).toDouble();
+      final high = (math.max(open, close) + rng.nextDouble() * .055)
+          .clamp(.08, .94)
+          .toDouble();
+      final low = (math.min(open, close) - rng.nextDouble() * .055)
+          .clamp(.06, .92)
+          .toDouble();
+      result.add(_Candle(open, high, low, close));
+    }
+
+    final visibleCount = (34 / zoom).round().clamp(16, 58).toInt();
+    final maxShift = historyCount - visibleCount;
+    final shift = (pan * maxShift).round().clamp(0, maxShift).toInt();
+    final end = historyCount - shift;
+    final start = end - visibleCount;
+    final visible = result.sublist(start, end);
+    final range = asset.price.abs() * .0018;
+    return _ChartData(
+      candles: visible,
+      minimumPrice: asset.price - range * .5,
+      maximumPrice: asset.price + range * .5,
+      times: const <DateTime>[],
+    );
+  }
+
+  double _average(List<double> values, int index, int period) {
+    final start = math.max(0, index - period + 1);
+    double total = 0;
+    for (int i = start; i <= index; i++) {
+      total += values[i];
+    }
+    return total / (index - start + 1);
+  }
+
+  void _drawCityBackdrop(Canvas canvas, Size size) {
+    final rng = math.Random(999);
+    final horizon = size.height * .73;
+    final haze = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0x001D4D8C), Color(0x242D6AA7)],
+      ).createShader(Rect.fromLTWH(0, size.height * .18, size.width, horizon));
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height * .18, size.width, horizon),
+      haze,
+    );
+
+    double x = -8;
+    while (x < size.width) {
+      final width = 24 + rng.nextDouble() * 48;
+      final buildingHeight = 45 + rng.nextDouble() * size.height * .28;
+      final rect = Rect.fromLTWH(
+        x,
+        horizon - buildingHeight,
+        width,
+        buildingHeight,
+      );
+      canvas.drawRect(rect, Paint()..color = const Color(0x1A84A9D8));
+      final roof = Path()
+        ..moveTo(x, rect.top)
+        ..lineTo(x + width * .5, rect.top - rng.nextDouble() * 14)
+        ..lineTo(x + width, rect.top)
+        ..close();
+      canvas.drawPath(roof, Paint()..color = const Color(0x1684A9D8));
+      for (double windowX = x + 7; windowX < x + width - 4; windowX += 11) {
+        for (double windowY = rect.top + 10;
+            windowY < horizon - 5;
+            windowY += 13) {
+          if (rng.nextDouble() > .54) {
+            canvas.drawRect(
+              Rect.fromLTWH(windowX, windowY, 3, 2),
+              Paint()..color = const Color(0x24B8D6FF),
+            );
+          }
+        }
+      }
+      x += width + 5;
+    }
+    canvas.drawRect(
+      Rect.fromLTWH(0, horizon, size.width, size.height - horizon),
+      Paint()..color = const Color(0x17050A14),
+    );
+  }
+
+  String _clock(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainder = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainder.toString().padLeft(2, '0')}';
+  }
+
+  void _drawMovingAverage(
+    Canvas canvas,
+    List<double> closes,
+    int period,
+    double Function(int) xFor,
+    double Function(double) yFor,
+    Color color,
+    double width,
+  ) {
+    final path = Path();
+    for (int i = 0; i < closes.length; i++) {
+      final value = _average(closes, i, period);
+      final point = Offset(xFor(i), yFor(value));
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = width
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  void _drawPriceScale(
+    Canvas canvas,
+    Size size,
+    double top,
+    double bottom,
+    double minimumPrice,
+    double maximumPrice,
+  ) {
+    for (int i = 0; i <= 5; i++) {
+      final ratio = 1 - i / 5;
+      final y = top + i * (bottom - top) / 5;
+      final value = minimumPrice + ratio * (maximumPrice - minimumPrice);
+      final decimals = value.abs() >= 10000
+          ? 0
+          : value.abs() >= 10
+              ? 3
+              : 5;
+      _text(canvas, value.toStringAsFixed(decimals),
+          Offset(size.width - 56, y - 6), 8, Colors.white54);
+    }
+  }
+
+  void _drawTimeScale(
+    Canvas canvas,
+    Size size,
+    double left,
+    double right,
+    List<DateTime> times,
+  ) {
+    if (times.isEmpty) {
+      const labels = ['11:56', '12:08', '12:20', '12:32', '12:44', '12:56'];
+      for (int i = 0; i < labels.length; i++) {
+        final x = left + i * (right - left) / (labels.length - 1);
+        _text(canvas, labels[i], Offset(x - 13, size.height - 18), 8,
+            Colors.white38);
+      }
+      return;
+    }
+
+    const labelCount = 6;
+    for (int i = 0; i < labelCount; i++) {
+      final index = (i * (times.length - 1) / (labelCount - 1)).round();
+      final local = times[index].toLocal();
+      final label =
+          '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+      final x = left + i * (right - left) / (labelCount - 1);
+      _text(canvas, label, Offset(x - 13, size.height - 18), 8, Colors.white38);
+    }
+  }
+
+  void _text(
+      Canvas canvas, String text, Offset offset, double size, Color color) {
+    final painter = TextPainter(
+      text:
+          TextSpan(text: text, style: TextStyle(fontSize: size, color: color)),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant MarketChartPainter oldDelegate) {
+    return oldDelegate.asset.symbol != asset.symbol ||
+        oldDelegate.marketCandles != marketCandles ||
+        oldDelegate.livePrice != livePrice ||
+        oldDelegate.timeframe != timeframe ||
+        oldDelegate.tick != tick ||
+        oldDelegate.chartStyle != chartStyle ||
+        oldDelegate.ema9 != ema9 ||
+        oldDelegate.ema21 != ema21 ||
+        oldDelegate.bollinger != bollinger ||
+        oldDelegate.zigZag != zigZag ||
+        oldDelegate.remainingSeconds != remainingSeconds ||
+        oldDelegate.zoom != zoom ||
+        oldDelegate.pan != pan;
+  }
+}
+
+class _ChartData {
+  const _ChartData({
+    required this.candles,
+    required this.minimumPrice,
+    required this.maximumPrice,
+    required this.times,
+  });
+
+  final List<_Candle> candles;
+  final double minimumPrice;
+  final double maximumPrice;
+  final List<DateTime> times;
+}
+
+class _Candle {
+  const _Candle(this.open, this.high, this.low, this.close);
+
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+}
+
+class IndicatorPainter extends CustomPainter {
+  const IndicatorPainter({
+    required this.variant,
+    required this.tick,
+    required this.marketCandles,
+    required this.zoom,
+    required this.pan,
+  });
+
+  final int variant;
+  final int tick;
+  final List<MarketCandle> marketCandles;
+  final double zoom;
+  final double pan;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final grid = Paint()
+      ..color = const Color(0xFF2A3550)
+      ..strokeWidth = .7;
+    for (int i = 1; i < 4; i++) {
+      final y = i * size.height / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+
+    final candles = _visibleCandles();
+    if (candles.length < 2) {
+      _paintSynthetic(canvas, size);
+      return;
+    }
+
+    switch (variant) {
+      case 0:
+        _paintRsi(canvas, size, candles);
+      case 1:
+        _paintStochastic(canvas, size, candles);
+      case 2:
+        _paintMacd(canvas, size, candles);
+      case 3:
+        _paintVolume(canvas, size, candles);
+    }
+  }
+
+  List<MarketCandle> _visibleCandles() {
+    if (marketCandles.length < 2) return const <MarketCandle>[];
+    final historyCount = marketCandles.length;
+    final maximumVisible = math.min(58, historyCount);
+    final minimumVisible = math.min(16, maximumVisible);
+    final visibleCount =
+        (34 / zoom).round().clamp(minimumVisible, maximumVisible).toInt();
+    final maxShift = historyCount - visibleCount;
+    final shift = (pan * maxShift).round().clamp(0, maxShift).toInt();
+    final end = historyCount - shift;
+    return marketCandles.sublist(end - visibleCount, end);
+  }
+
+  void _paintRsi(Canvas canvas, Size size, List<MarketCandle> candles) {
+    final rsi = _rsi(candles.map((candle) => candle.close).toList(), 14);
+    final signal = _simpleAverage(rsi, 5);
+    _drawNormalizedLine(canvas, size, rsi, const Color(0xFFFFE85C));
+    _drawNormalizedLine(canvas, size, signal, const Color(0xFF62E9C4));
+    _drawGuides(canvas, size, .30, .70);
+  }
+
+  void _paintStochastic(Canvas canvas, Size size, List<MarketCandle> candles) {
+    final k = <double>[];
+    for (int i = 0; i < candles.length; i++) {
+      final start = math.max(0, i - 13);
+      var low = candles[start].low;
+      var high = candles[start].high;
+      for (int j = start + 1; j <= i; j++) {
+        low = math.min(low, candles[j].low).toDouble();
+        high = math.max(high, candles[j].high).toDouble();
+      }
+      final range = high - low;
+      k.add(range <= 0 ? 50 : (candles[i].close - low) / range * 100);
+    }
+    final d = _simpleAverage(k, 3);
+    _drawNormalizedLine(canvas, size, k, Colors.white);
+    _drawNormalizedLine(canvas, size, d, const Color(0xFFFF3D4F));
+    _drawGuides(canvas, size, .20, .80);
+  }
+
+  void _paintMacd(Canvas canvas, Size size, List<MarketCandle> candles) {
+    final closes = candles.map((candle) => candle.close).toList();
+    final fast = _ema(closes, 12);
+    final slow = _ema(closes, 26);
+    final macd = List<double>.generate(
+      closes.length,
+      (index) => fast[index] - slow[index],
+    );
+    final signal = _ema(macd, 9);
+    final histogram = List<double>.generate(
+      closes.length,
+      (index) => macd[index] - signal[index],
+    );
+    var maximum = .0000001;
+    for (int i = 0; i < macd.length; i++) {
+      maximum = math.max(maximum, macd[i].abs()).toDouble();
+      maximum = math.max(maximum, signal[i].abs()).toDouble();
+      maximum = math.max(maximum, histogram[i].abs()).toDouble();
+    }
+
+    final middle = size.height * .52;
+    final slot = size.width / histogram.length;
+    for (int i = 0; i < histogram.length; i++) {
+      final y = middle - histogram[i] / maximum * size.height * .38;
+      canvas.drawRect(
+        Rect.fromLTRB(
+          i * slot + 1,
+          math.min(middle, y).toDouble(),
+          (i + 1) * slot - 1,
+          math.max(middle, y).toDouble(),
+        ),
+        Paint()
+          ..color = histogram[i] >= 0
+              ? const Color(0xFF65D832)
+              : const Color(0xFFFF2639),
+      );
+    }
+    _drawCenteredLine(canvas, size, macd, maximum, const Color(0xFFFFFFFF));
+    _drawCenteredLine(canvas, size, signal, maximum, const Color(0xFFFF3D4F));
+  }
+
+  void _paintVolume(Canvas canvas, Size size, List<MarketCandle> candles) {
+    final volumes =
+        candles.map((candle) => candle.volume ?? 0).toList(growable: false);
+    var maximum = 0.0;
+    for (final volume in volumes) {
+      maximum = math.max(maximum, volume).toDouble();
+    }
+    final values = maximum > 0
+        ? volumes
+        : candles
+            .map((candle) =>
+                (candle.high - candle.low).abs() +
+                (candle.close - candle.open).abs())
+            .toList(growable: false);
+    maximum = .0000001;
+    for (final value in values) {
+      maximum = math.max(maximum, value).toDouble();
+    }
+    final slot = size.width / candles.length;
+    final average = <double>[];
+    for (int i = 0; i < candles.length; i++) {
+      final height = (values[i] / maximum * size.height * .88)
+          .clamp(1.0, size.height - 2)
+          .toDouble();
+      canvas.drawRect(
+        Rect.fromLTWH(i * slot + 1, size.height - height,
+            math.max(1.0, slot - 2).toDouble(), height),
+        Paint()
+          ..color = candles[i].close >= candles[i].open
+              ? const Color(0xFF8BE800)
+              : const Color(0xFFFF2436),
+      );
+      average.add(values[i] / maximum * 100);
+    }
+    _drawNormalizedLine(canvas, size, _simpleAverage(average, 6), Colors.white);
+  }
+
+  List<double> _rsi(List<double> closes, int period) {
+    final values = <double>[50];
+    for (int i = 1; i < closes.length; i++) {
+      final start = math.max(1, i - period + 1);
+      double gains = 0;
+      double losses = 0;
+      for (int j = start; j <= i; j++) {
+        final change = closes[j] - closes[j - 1];
+        if (change >= 0) {
+          gains += change;
+        } else {
+          losses -= change;
+        }
+      }
+      final count = i - start + 1;
+      final averageGain = gains / count;
+      final averageLoss = losses / count;
+      if (averageLoss == 0) {
+        values.add(averageGain == 0 ? 50 : 100);
+      } else {
+        values.add(100 - 100 / (1 + averageGain / averageLoss));
+      }
+    }
+    return values;
+  }
+
+  List<double> _simpleAverage(List<double> values, int period) {
+    return List<double>.generate(values.length, (index) {
+      final start = math.max(0, index - period + 1);
+      double total = 0;
+      for (int i = start; i <= index; i++) {
+        total += values[i];
+      }
+      return total / (index - start + 1);
+    });
+  }
+
+  List<double> _ema(List<double> values, int period) {
+    if (values.isEmpty) return const <double>[];
+    final alpha = 2 / (period + 1);
+    final result = <double>[values.first];
+    for (int i = 1; i < values.length; i++) {
+      result.add(values[i] * alpha + result.last * (1 - alpha));
+    }
+    return result;
+  }
+
+  void _drawNormalizedLine(
+      Canvas canvas, Size size, List<double> values, Color color) {
+    if (values.length < 2) return;
+    final path = Path();
+    for (int i = 0; i < values.length; i++) {
+      final x = i * size.width / (values.length - 1);
+      final y =
+          size.height * (1 - (values[i] / 100).clamp(0.0, 1.0).toDouble());
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 1.7
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  void _drawCenteredLine(Canvas canvas, Size size, List<double> values,
+      double maximum, Color color) {
+    if (values.length < 2) return;
+    final path = Path();
+    for (int i = 0; i < values.length; i++) {
+      final x = i * size.width / (values.length - 1);
+      final y = size.height * .52 - values[i] / maximum * size.height * .38;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 1.7
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  void _drawGuides(Canvas canvas, Size size, double upper, double lower) {
+    final guide = Paint()
+      ..color = const Color(0xFF64E7A7)
+      ..strokeWidth = .8;
+    canvas.drawLine(Offset(0, size.height * upper),
+        Offset(size.width, size.height * upper), guide);
+    canvas.drawLine(Offset(0, size.height * lower),
+        Offset(size.width, size.height * lower), guide);
+  }
+
+  void _paintSynthetic(Canvas canvas, Size size) {
+    if (variant == 3) {
+      final rng = math.Random(77);
+      for (int i = 0; i < 36; i++) {
+        final slot = size.width / 36;
+        final height = (size.height * (.18 + rng.nextDouble() * .68))
+            .clamp(4.0, size.height - 5)
+            .toDouble();
+        final rising = math.sin(i * .78 + tick * .04) >= 0;
+        canvas.drawRect(
+          Rect.fromLTWH(i * slot + 1, size.height - height,
+              math.max(2.0, slot - 3), height),
+          Paint()
+            ..color =
+                rising ? const Color(0xFF8BE800) : const Color(0xFFFF2436),
+        );
+      }
+      return;
+    }
+
+    if (variant == 2) {
+      final middle = size.height * .52;
+      for (int i = 0; i < 32; i++) {
+        final x = i * size.width / 32;
+        final value = math.sin(i * .29 + tick * .03) * size.height * .27;
+        canvas.drawRect(
+          Rect.fromLTRB(x + 1, middle, x + size.width / 38, middle + value),
+          Paint()
+            ..color =
+                value < 0 ? const Color(0xFF65D832) : const Color(0xFFFF2639),
+        );
+      }
+    }
+
+    final colors = variant == 0
+        ? const [Color(0xFFFFE85C), Color(0xFF62E9C4)]
+        : const [Color(0xFFFFFFFF), Color(0xFFFF3D4F)];
+    for (int line = 0; line < 2; line++) {
+      final path = Path();
+      for (int i = 0; i < 34; i++) {
+        final x = i * size.width / 33;
+        final phase = i * (.29 + variant * .035) + line * .72;
+        final y = size.height * .5 +
+            math.sin(phase + tick * .025) *
+                size.height *
+                (line == 0 ? .23 : .18);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = colors[line]
+          ..strokeWidth = 1.7
+          ..style = PaintingStyle.stroke,
+      );
+    }
+    if (variant < 2) {
+      _drawGuides(
+          canvas, size, variant == 0 ? .30 : .22, variant == 0 ? .70 : .78);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant IndicatorPainter oldDelegate) {
+    return oldDelegate.variant != variant ||
+        oldDelegate.tick != tick ||
+        oldDelegate.marketCandles != marketCandles ||
+        oldDelegate.zoom != zoom ||
+        oldDelegate.pan != pan;
+  }
+}

@@ -1,0 +1,2276 @@
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const TradeXApp());
+}
+
+class TradeXApp extends StatelessWidget {
+  const TradeXApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '999 TradeX Intelligence',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF02050C),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF9B5CFF),
+          secondary: Color(0xFF18E6D0),
+        ),
+      ),
+      home: const MasterTradingTerminal(),
+    );
+  }
+}
+
+class MasterTradingTerminal extends StatefulWidget {
+  const MasterTradingTerminal({super.key});
+
+  @override
+  State<MasterTradingTerminal> createState() => _MasterTradingTerminalState();
+}
+
+class _MasterTradingTerminalState extends State<MasterTradingTerminal> {
+  static const bg = Color(0xFF02050C);
+  static const panel = Color(0xFF07101B);
+  static const panel2 = Color(0xFF091522);
+  static const border = Color(0xFF203345);
+  static const purple = Color(0xFF9859FF);
+  static const cyan = Color(0xFF18E6D0);
+  static const green = Color(0xFF39E75F);
+  static const red = Color(0xFFFF4757);
+  static const orange = Color(0xFFFFA62B);
+  static const text = Color(0xFFF1F5F7);
+  static const muted = Color(0xFF8495A6);
+
+  String selectedNav = 'DASHBOARD';
+  String selectedSymbol = 'EURUSD';
+  String timeframe = 'M1';
+  bool live = true;
+  String orderSide = 'BUY';
+  String analysisTab = 'AI ANALYSIS';
+  double volume = 1.00;
+  double risk = 1.00;
+
+  final scannerRows = const [
+    ScannerRow('EURUSD', '1.08945', 87, 'BUY'),
+    ScannerRow('GBPUSD', '1.26730', 82, 'BUY'),
+    ScannerRow('USDJPY', '150.682', 78, 'SELL'),
+    ScannerRow('XAUUSD', '2394.21', 75, 'BUY'),
+    ScannerRow('AUDUSD', '0.66721', 72, 'BUY'),
+    ScannerRow('USDCAD', '1.37391', 69, 'SELL'),
+    ScannerRow('USDCHF', '0.88463', 66, 'SELL'),
+    ScannerRow('NZDUSD', '0.60824', 63, 'BUY'),
+    ScannerRow('EURJPY', '167.323', 62, 'BUY'),
+    ScannerRow('GBPJPY', '190.435', 61, 'SELL'),
+    ScannerRow('AUDJPY', '100.876', 60, 'BUY'),
+    ScannerRow('BTCUSD', '67284.11', 58, 'BUY'),
+  ];
+
+  Widget box({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(10),
+  }) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: border),
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: 1600,
+                  height: 980,
+                  child: _terminal(),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _terminal() {
+    return Container(
+      color: bg,
+      child: Column(
+        children: [
+          _header(),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _navigationRail(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(
+                              width: 340,
+                              child: _leftIntelligenceColumn(),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _centerWorkspace(),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 260,
+                              child: _tradePanel(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 170,
+                        child: _bottomPositions(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _header() {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFF040812),
+        border: Border(
+          bottom: BorderSide(color: border),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Text(
+            '999',
+            style: TextStyle(
+              color: purple,
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TRADING INTELLIGENCE',
+                style: TextStyle(
+                  color: text,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                'MASTER TRADING TERMINAL',
+                style: TextStyle(
+                  color: muted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 9,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 22),
+          Expanded(
+            child: Container(
+              height: 38,
+              constraints: const BoxConstraints(maxWidth: 310),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: panel2,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search, size: 16, color: muted),
+                  SizedBox(width: 8),
+                  Text(
+                    'Search symbol...',
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          _headerMetric(
+            'EQUITY',
+            '\$25,437.68',
+          ),
+          _headerMetric(
+            'BALANCE',
+            '\$25,437.68',
+          ),
+          _headerMetric(
+            'PROFIT / LOSS',
+            '+\$3,215.42',
+            valueColor: green,
+          ),
+          Container(
+            width: 1,
+            height: 38,
+            color: border,
+          ),
+          const SizedBox(width: 14),
+          const CircleAvatar(
+            radius: 20,
+            backgroundColor: Color(0xFF25153A),
+            child: Icon(
+              Icons.psychology,
+              color: purple,
+            ),
+          ),
+          const SizedBox(width: 9),
+          const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Agent Duke AI',
+                style: TextStyle(
+                  color: text,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                'MASTER AI ENGINE',
+                style: TextStyle(
+                  color: muted,
+                  fontSize: 8,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.notifications_none,
+              color: text,
+            ),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerMetric(
+    String label,
+    String value, {
+    Color valueColor = text,
+  }) {
+    return SizedBox(
+      width: 150,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: muted,
+                fontSize: 8,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: TextStyle(
+                color: valueColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navigationRail() {
+    const items = [
+      ('DASHBOARD', Icons.home_outlined),
+      ('SCANNER', Icons.radar),
+      ('CHARTS', Icons.show_chart),
+      ('TRADING', Icons.swap_horiz),
+      ('POSITIONS', Icons.account_balance_wallet_outlined),
+      ('ORDERS', Icons.list_alt),
+      ('HISTORY', Icons.history),
+      ('AI ANALYSIS', Icons.psychology_outlined),
+      ('BACKTEST', Icons.science_outlined),
+      ('MARKET NEWS', Icons.newspaper_outlined),
+      ('CALENDAR', Icons.calendar_month_outlined),
+      ('SUPPORT', Icons.support_agent),
+    ];
+
+    return Container(
+      width: 86,
+      color: const Color(0xFF040914),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        children: [
+          for (final item in items)
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    selectedNav = item.$1;
+                  });
+                },
+                child: Container(
+                  width: 78,
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selectedNav == item.$1
+                        ? const Color(0xFF24153D)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    border: selectedNav == item.$1
+                        ? Border.all(
+                            color: purple.withValues(
+                              alpha: .6,
+                            ),
+                          )
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        item.$2,
+                        size: 19,
+                        color: selectedNav == item.$1 ? purple : muted,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.$1,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: selectedNav == item.$1 ? text : muted,
+                          fontSize: 7,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _leftIntelligenceColumn() {
+    return Column(
+      children: [
+        Expanded(
+          flex: 12,
+          child: _marketScanner(),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          flex: 5,
+          child: _sentiment(),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          flex: 5,
+          child: _calendar(),
+        ),
+      ],
+    );
+  }
+
+  Widget _marketScanner() {
+    return box(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MARKET SCANNER',
+                      style: TextStyle(
+                        color: text,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'TOP 12 OPPORTUNITIES',
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {});
+                },
+                icon: const Icon(
+                  Icons.refresh,
+                  size: 12,
+                ),
+                label: const Text(
+                  'Rescan',
+                  style: TextStyle(fontSize: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              for (final value in [
+                'ALL',
+                'MAJORS',
+                'MINORS',
+                'EXOTICS',
+              ])
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 3),
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color:
+                          value == 'MAJORS' ? const Color(0xFF372354) : panel2,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 7,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          const Row(
+            children: [
+              SizedBox(width: 20),
+              Expanded(
+                child: Text(
+                  'SYMBOL',
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 7,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 70,
+                child: Text(
+                  'CONF.',
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 7,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 52,
+                child: Text(
+                  'SIGNAL',
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 7,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Column(
+              children: [
+                for (var i = 0; i < scannerRows.length; i++)
+                  Expanded(
+                    child: _scannerRow(
+                      i + 1,
+                      scannerRows[i],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(color: border, height: 8),
+          const Row(
+            children: [
+              Text(
+                'LAST UPDATED: 10:30:45 AM',
+                style: TextStyle(
+                  color: muted,
+                  fontSize: 7,
+                ),
+              ),
+              Spacer(),
+              Text(
+                'AUTO SCAN ●',
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 7,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _scannerRow(
+    int index,
+    ScannerRow row,
+  ) {
+    final bullish = row.signal == 'BUY';
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          selectedSymbol = row.symbol;
+        });
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: selectedSymbol == row.symbol
+              ? const Color(0xFF101E2C)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 3,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              child: Text(
+                '$index',
+                style: const TextStyle(
+                  color: muted,
+                  fontSize: 8,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    row.symbol,
+                    style: const TextStyle(
+                      color: text,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Text(
+                    row.price,
+                    style: const TextStyle(
+                      color: muted,
+                      fontSize: 7,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 70,
+              child: Row(
+                children: [
+                  Icon(
+                    bullish ? Icons.trending_up : Icons.trending_down,
+                    size: 15,
+                    color: bullish ? green : red,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${row.confidence}%',
+                    style: const TextStyle(
+                      color: text,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 48,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color:
+                    bullish ? const Color(0xFF164728) : const Color(0xFF571C25),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                row.signal,
+                style: TextStyle(
+                  color: bullish ? green : red,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sentiment() {
+    return box(
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const SizedBox(
+                  width: 92,
+                  height: 92,
+                  child: CircularProgressIndicator(
+                    value: .72,
+                    strokeWidth: 10,
+                    backgroundColor: Color(0xFF461923),
+                    valueColor: AlwaysStoppedAnimation(
+                      green,
+                    ),
+                  ),
+                ),
+                const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'BULLISH',
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: 8,
+                      ),
+                    ),
+                    Text(
+                      '72%',
+                      style: TextStyle(
+                        color: text,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'AI MARKET SENTIMENT',
+                  style: TextStyle(
+                    color: text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                  ),
+                ),
+                SizedBox(height: 10),
+                _LegendRow('BULLISH', '72%', green),
+                _LegendRow('NEUTRAL', '18%', orange),
+                _LegendRow('BEARISH', '10%', red),
+                SizedBox(height: 8),
+                Text(
+                  'AI Confidence: HIGH',
+                  style: TextStyle(
+                    color: green,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _calendar() {
+    return box(
+      padding: const EdgeInsets.all(8),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ECONOMIC CALENDAR',
+            style: TextStyle(
+              color: text,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 8),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _CalendarRow(
+                    '10:30',
+                    'USD',
+                    'CPI m/m',
+                    'HIGH',
+                  ),
+                ),
+                Expanded(
+                  child: _CalendarRow(
+                    '11:00',
+                    'USD',
+                    'Core CPI m/m',
+                    'HIGH',
+                  ),
+                ),
+                Expanded(
+                  child: _CalendarRow(
+                    '12:30',
+                    'USD',
+                    'PPI m/m',
+                    'MED',
+                  ),
+                ),
+                Expanded(
+                  child: _CalendarRow(
+                    '14:00',
+                    'USD',
+                    'FOMC Member Speaks',
+                    'LOW',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _centerWorkspace() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 42,
+          child: _chartToolbar(),
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          flex: 12,
+          child: _chart(),
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          flex: 5,
+          child: _analysisDeck(),
+        ),
+      ],
+    );
+  }
+
+  Widget _chartToolbar() {
+    return box(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selectedSymbol,
+              dropdownColor: panel2,
+              items: scannerRows
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e.symbol,
+                      child: Text(e.symbol),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  selectedSymbol = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          for (final tf in [
+            'M1',
+            'M5',
+            'M15',
+            'H1',
+          ])
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: _smallButton(
+                tf,
+                selected: timeframe == tf,
+                onTap: () {
+                  setState(() {
+                    timeframe = tf;
+                  });
+                },
+              ),
+            ),
+          const SizedBox(width: 8),
+          _smallButton(
+            live ? 'LIVE' : 'DEMO',
+            selected: live,
+            onTap: () {
+              setState(() {
+                live = !live;
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+          const _ToolbarIcon(Icons.candlestick_chart),
+          const _ToolbarIcon(Icons.timeline),
+          const _ToolbarIcon(Icons.auto_graph),
+          const SizedBox(width: 6),
+          const Text(
+            'Indicators',
+            style: TextStyle(
+              color: text,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          const _ToolbarIcon(Icons.notifications_none),
+          const _ToolbarIcon(Icons.replay),
+          const _ToolbarIcon(Icons.undo),
+          const _ToolbarIcon(Icons.redo),
+          const _ToolbarIcon(Icons.fullscreen),
+        ],
+      ),
+    );
+  }
+
+  Widget _smallButton(
+    String value, {
+    required VoidCallback onTap,
+    bool selected = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 27,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+        ),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF123D32) : panel2,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: selected ? green : border,
+          ),
+        ),
+        child: Text(
+          value,
+          style: TextStyle(
+            color: selected ? green : text,
+            fontSize: 8,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chart() {
+    return box(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Container(
+            height: 34,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                Text(
+                  '$selectedSymbol • $timeframe',
+                  style: const TextStyle(
+                    color: text,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'O 1.08921  H 1.08953  L 1.08912  C 1.08945   +0.02%',
+                  style: TextStyle(
+                    color: green,
+                    fontSize: 8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: CustomPaint(
+              painter: const MasterChartPainter(),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _analysisDeck() {
+    const tabs = [
+      'AI ANALYSIS',
+      'MULTI-TIMEFRAME',
+      'ORDER FLOW',
+      'LIQUIDITY',
+      'SENTIMENT',
+      'MACRO',
+      'VOLATILITY',
+      'PATTERNS',
+      'CORRELATION',
+      'FIBS',
+      'SUMMARY',
+    ];
+
+    return box(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                for (final tab in tabs)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          analysisTab = tab;
+                        });
+                      },
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: analysisTab == tab ? purple : border,
+                              width: analysisTab == tab ? 2 : 1,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          tab,
+                          style: TextStyle(
+                            color: analysisTab == tab ? text : muted,
+                            fontSize: 6.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _AnalysisBiasCard(),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 5,
+                  child: _DukeSummaryCard(),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _KeyLevelsCard(),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: _ProbabilityCard(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tradePanel() {
+    return box(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'TRADE',
+            style: TextStyle(
+              color: text,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _sideButton('BUY', green),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _sideButton('SELL', red),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _SectionLabel('ORDER TYPE'),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _smallButton(
+                  'MARKET',
+                  selected: true,
+                  onTap: () {},
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _smallButton(
+                  'LIMIT',
+                  onTap: () {},
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: _smallButton(
+                  'STOP',
+                  onTap: () {},
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          const _SectionLabel('VOLUME'),
+          const SizedBox(height: 5),
+          _numericControl(
+            volume.toStringAsFixed(2),
+            onMinus: () {
+              setState(() {
+                volume = math.max(.01, volume - .10);
+              });
+            },
+            onPlus: () {
+              setState(() {
+                volume += .10;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          const _SectionLabel('RISK'),
+          const SizedBox(height: 5),
+          _numericControl(
+            '${risk.toStringAsFixed(2)}%',
+            onMinus: () {
+              setState(() {
+                risk = math.max(.25, risk - .25);
+              });
+            },
+            onPlus: () {
+              setState(() {
+                risk += .25;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          const _SectionLabel('STOP LOSS'),
+          const SizedBox(height: 5),
+          _valueBox('1.08700'),
+          const SizedBox(height: 10),
+          const _SectionLabel('TAKE PROFIT'),
+          const SizedBox(height: 5),
+          _valueBox('1.09150'),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '$orderSide order prepared for $selectedSymbol. Execution provider is not connected yet.',
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7138D5),
+                foregroundColor: Colors.white,
+              ),
+              child: Text(
+                'PLACE $orderSide ORDER',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Row(
+            children: [
+              Expanded(
+                child: _TradeMetric(
+                  'POTENTIAL',
+                  '\$205.00',
+                  green,
+                ),
+              ),
+              Expanded(
+                child: _TradeMetric(
+                  'RISK / REWARD',
+                  '1 : 0.84',
+                  text,
+                ),
+              ),
+              Expanded(
+                child: _TradeMetric(
+                  'WIN RATE',
+                  '67%',
+                  text,
+                ),
+              ),
+            ],
+          ),
+          const Divider(color: border, height: 24),
+          const Text(
+            'ACCOUNT INFO',
+            style: TextStyle(
+              color: text,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 9),
+          const _InfoRow('Equity', '\$25,437.68'),
+          const _InfoRow('Balance', '\$25,437.68'),
+          const _InfoRow('Margin', '\$1,254.80'),
+          const _InfoRow('Free Margin', '\$24,182.88'),
+          const _InfoRow('Margin Level', '2,027.45%'),
+          const Spacer(),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A1823),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: border),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'EXECUTION STATUS',
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: 7,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'SIMULATION / UI ONLY',
+                  style: TextStyle(
+                    color: orange,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sideButton(
+    String side,
+    Color color,
+  ) {
+    final selected = orderSide == side;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          orderSide = side;
+        });
+      },
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withValues(alpha: .75)
+              : color.withValues(alpha: .20),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: color),
+        ),
+        child: Text(
+          side,
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 11,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _numericControl(
+    String value, {
+    required VoidCallback onMinus,
+    required VoidCallback onPlus,
+  }) {
+    return Container(
+      height: 38,
+      decoration: BoxDecoration(
+        color: panel2,
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onMinus,
+            icon: const Icon(
+              Icons.remove,
+              size: 15,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: onPlus,
+            icon: const Icon(
+              Icons.add,
+              size: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _valueBox(String value) {
+    return Container(
+      width: double.infinity,
+      height: 35,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+      ),
+      decoration: BoxDecoration(
+        color: panel2,
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        value,
+        style: const TextStyle(
+          color: text,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomPositions() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: box(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'OPEN POSITIONS (3)     PENDING ORDERS (2)     TRADE HISTORY     ALERTS (8)     NEWS FEED',
+                  style: TextStyle(
+                    color: text,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Divider(color: border),
+                const Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: _PositionRow(
+                          'EURUSD',
+                          'BUY',
+                          '1.00',
+                          '1.08721',
+                          '1.08945',
+                          '+\$224.00',
+                        ),
+                      ),
+                      Expanded(
+                        child: _PositionRow(
+                          'GBPUSD',
+                          'BUY',
+                          '0.50',
+                          '1.26543',
+                          '1.26783',
+                          '+\$120.00',
+                        ),
+                      ),
+                      Expanded(
+                        child: _PositionRow(
+                          'XAUUSD',
+                          'BUY',
+                          '0.20',
+                          '2382.15',
+                          '2394.21',
+                          '+\$241.00',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 2,
+          child: box(
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: .67,
+                        strokeWidth: 10,
+                        backgroundColor: Color(0xFF173027),
+                        valueColor: AlwaysStoppedAnimation(
+                          purple,
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '67%',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            'WIN RATE',
+                            style: TextStyle(
+                              color: muted,
+                              fontSize: 7,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _InfoRow(
+                        'Total Trades',
+                        '127',
+                      ),
+                      _InfoRow(
+                        'Winning Trades',
+                        '85',
+                      ),
+                      _InfoRow(
+                        'Losing Trades',
+                        '42',
+                      ),
+                      _InfoRow(
+                        'Best Trade',
+                        '+\$542.30',
+                      ),
+                      _InfoRow(
+                        'Net Profit',
+                        '+\$3,215.42',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class ScannerRow {
+  final String symbol;
+  final String price;
+  final int confidence;
+  final String signal;
+
+  const ScannerRow(
+    this.symbol,
+    this.price,
+    this.confidence,
+    this.signal,
+  );
+}
+
+class MasterChartPainter extends CustomPainter {
+  const MasterChartPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final grid = Paint()
+      ..color = const Color(0xFF132536)
+      ..strokeWidth = .7;
+
+    for (var i = 1; i < 12; i++) {
+      final x = size.width * i / 12;
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        grid,
+      );
+    }
+
+    for (var i = 1; i < 8; i++) {
+      final y = size.height * i / 8;
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        grid,
+      );
+    }
+
+    final rand = math.Random(999);
+
+    double price = size.height * .52;
+
+    final candleSpacing = math.max(7.0, size.width / 75);
+
+    final count = math.max(28, (size.width / candleSpacing).floor());
+
+    final ema9 = <Offset>[];
+    final ema21 = <Offset>[];
+    final ema50 = <Offset>[];
+
+    for (var i = 0; i < count; i++) {
+      final x = i * candleSpacing + 10;
+
+      final move = (rand.nextDouble() - .48) * 22;
+
+      final open = price;
+      final close = price - move;
+
+      final high = math.min(open, close) - rand.nextDouble() * 10;
+
+      final low = math.max(open, close) + rand.nextDouble() * 10;
+
+      final bullish = close < open;
+
+      final paint = Paint()
+        ..color = bullish ? const Color(0xFF12D989) : const Color(0xFFFF4D57)
+        ..strokeWidth = 1.2;
+
+      canvas.drawLine(
+        Offset(x, high),
+        Offset(x, low),
+        paint,
+      );
+
+      canvas.drawRect(
+        Rect.fromLTWH(
+          x - 3,
+          math.min(open, close),
+          6,
+          math.max(2, (close - open).abs()),
+        ),
+        paint,
+      );
+
+      price = close;
+
+      ema9.add(
+        Offset(
+          x,
+          close + math.sin(i / 3) * 7,
+        ),
+      );
+
+      ema21.add(
+        Offset(
+          x,
+          close + 10 + math.sin(i / 5) * 6,
+        ),
+      );
+
+      ema50.add(
+        Offset(
+          x,
+          close + 22 + math.sin(i / 7) * 5,
+        ),
+      );
+    }
+
+    void drawPath(
+      List<Offset> points,
+      Color color,
+    ) {
+      if (points.length < 2) return;
+
+      final path = Path()
+        ..moveTo(
+          points.first.dx,
+          points.first.dy,
+        );
+
+      for (final point in points.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..strokeWidth = 1.3
+          ..style = PaintingStyle.stroke,
+      );
+    }
+
+    drawPath(
+      ema9,
+      const Color(0xFFA35BFF),
+    );
+
+    drawPath(
+      ema21,
+      const Color(0xFFFFA62B),
+    );
+
+    drawPath(
+      ema50,
+      const Color(0xFF258CFF),
+    );
+
+    final priceLine = Paint()
+      ..color = const Color(0xFF15DAB2)
+      ..strokeWidth = .8;
+
+    canvas.drawLine(
+      Offset(0, price),
+      Offset(size.width, price),
+      priceLine,
+    );
+
+    final rsiY = size.height * .74;
+
+    canvas.drawLine(
+      Offset(0, rsiY),
+      Offset(size.width, rsiY),
+      Paint()
+        ..color = const Color(0xFF432867)
+        ..strokeWidth = 1,
+    );
+
+    final histogramBase = size.height * .93;
+
+    for (var i = 0; i < 32; i++) {
+      final x = size.width * i / 32;
+
+      final magnitude = 5 + rand.nextDouble() * 26;
+
+      final positive = rand.nextBool();
+
+      final p = Paint()
+        ..color = positive ? const Color(0xFF12D989) : const Color(0xFFFF4D57);
+
+      canvas.drawRect(
+        Rect.fromLTWH(
+          x + 2,
+          histogramBase - (positive ? magnitude : 0),
+          math.max(2, size.width / 40),
+          magnitude,
+        ),
+        p,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(
+    covariant MasterChartPainter oldDelegate,
+  ) {
+    return false;
+  }
+}
+
+class _LegendRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _LegendRow(
+    this.label,
+    this.value,
+    this.color,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 2,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.circle,
+            color: color,
+            size: 7,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF8495A6),
+                fontSize: 8,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CalendarRow extends StatelessWidget {
+  final String time;
+  final String currency;
+  final String event;
+  final String impact;
+
+  const _CalendarRow(
+    this.time,
+    this.currency,
+    this.event,
+    this.impact,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final impactColor = impact == 'HIGH'
+        ? const Color(0xFFFF4757)
+        : impact == 'MED'
+            ? const Color(0xFFFFA62B)
+            : const Color(0xFF39E75F);
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 42,
+          child: Text(
+            time,
+            style: const TextStyle(
+              color: Color(0xFF8495A6),
+              fontSize: 8,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 36,
+          child: Text(
+            currency,
+            style: const TextStyle(
+              color: Color(0xFF4DA3FF),
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            event,
+            style: const TextStyle(
+              fontSize: 8,
+            ),
+          ),
+        ),
+        Text(
+          impact,
+          style: TextStyle(
+            color: impactColor,
+            fontSize: 7,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToolbarIcon extends StatelessWidget {
+  final IconData icon;
+
+  const _ToolbarIcon(this.icon);
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {},
+      visualDensity: VisualDensity.compact,
+      icon: Icon(
+        icon,
+        size: 16,
+        color: const Color(0xFF8495A6),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String value;
+
+  const _SectionLabel(this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      value,
+      style: const TextStyle(
+        color: Color(0xFF8495A6),
+        fontSize: 8,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _TradeMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _TradeMetric(
+    this.label,
+    this.value,
+    this.color,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF8495A6),
+            fontSize: 6,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow(
+    this.label,
+    this.value,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 3,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF8495A6),
+                fontSize: 8,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFFF1F5F7),
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnalysisBiasCard extends StatelessWidget {
+  const _AnalysisBiasCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'OVERALL BIAS',
+          style: TextStyle(
+            color: Color(0xFF8495A6),
+            fontSize: 7,
+          ),
+        ),
+        Spacer(),
+        Icon(
+          Icons.trending_up,
+          color: Color(0xFF39E75F),
+          size: 34,
+        ),
+        Text(
+          'BULLISH',
+          style: TextStyle(
+            color: Color(0xFF39E75F),
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          'CONFIDENCE 87%',
+          style: TextStyle(
+            color: Color(0xFFF1F5F7),
+            fontSize: 8,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Spacer(),
+      ],
+    );
+  }
+}
+
+class _DukeSummaryCard extends StatelessWidget {
+  const _DukeSummaryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'AGENT DUKE AI SUMMARY',
+          style: TextStyle(
+            color: Color(0xFFB880FF),
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          '• Strong bullish momentum aligned across M1, M5 and M15\n'
+          '• Price holding above key moving averages\n'
+          '• RSI constructive without extreme overbought conditions\n'
+          '• Order flow currently favors buyers\n'
+          '• Key resistance near 1.09150; support near 1.08700\n'
+          '• Probability of continuation: 87%',
+          style: TextStyle(
+            color: Color(0xFFCAD3DB),
+            fontSize: 8,
+            height: 1.55,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _KeyLevelsCard extends StatelessWidget {
+  const _KeyLevelsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'KEY LEVELS',
+          style: TextStyle(
+            color: Color(0xFFF1F5F7),
+            fontSize: 8,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: 7),
+        _LevelRow('R3', '1.09320', Color(0xFFFF4757)),
+        _LevelRow('R2', '1.09150', Color(0xFFFF4757)),
+        _LevelRow('R1', '1.09020', Color(0xFFFFA62B)),
+        _LevelRow('P', '1.08880', Color(0xFFFFA62B)),
+        _LevelRow('S1', '1.08700', Color(0xFF39E75F)),
+        _LevelRow('S2', '1.08610', Color(0xFF39E75F)),
+      ],
+    );
+  }
+}
+
+class _LevelRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _LevelRow(
+    this.label,
+    this.value,
+    this.color,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 2,
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 7,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProbabilityCard extends StatelessWidget {
+  const _ProbabilityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PROBABILITY METER',
+          style: TextStyle(
+            color: Color(0xFFF1F5F7),
+            fontSize: 8,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        SizedBox(height: 8),
+        _ProbabilityRow(
+          'LONG',
+          87,
+          Color(0xFF39E75F),
+        ),
+        _ProbabilityRow(
+          'NEUTRAL',
+          8,
+          Color(0xFFFFA62B),
+        ),
+        _ProbabilityRow(
+          'SHORT',
+          5,
+          Color(0xFFFF4757),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProbabilityRow extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+
+  const _ProbabilityRow(
+    this.label,
+    this.value,
+    this.color,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 3,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 45,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Expanded(
+            child: LinearProgressIndicator(
+              value: value / 100,
+              minHeight: 7,
+              backgroundColor: const Color(0xFF162431),
+              valueColor: AlwaysStoppedAnimation(color),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '$value%',
+            style: const TextStyle(
+              fontSize: 7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PositionRow extends StatelessWidget {
+  final String symbol;
+  final String type;
+  final String volume;
+  final String open;
+  final String current;
+  final String profit;
+
+  const _PositionRow(
+    this.symbol,
+    this.type,
+    this.volume,
+    this.open,
+    this.current,
+    this.profit,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(
+            symbol,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 8,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 60,
+          child: Text(
+            type,
+            style: const TextStyle(
+              color: Color(0xFF18E6D0),
+              fontSize: 8,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 80,
+          child: Text(
+            volume,
+            style: const TextStyle(
+              fontSize: 8,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            open,
+            style: const TextStyle(
+              fontSize: 8,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            current,
+            style: const TextStyle(
+              fontSize: 8,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 100,
+          child: Text(
+            profit,
+            style: const TextStyle(
+              color: Color(0xFF39E75F),
+              fontWeight: FontWeight.w900,
+              fontSize: 8,
+            ),
+          ),
+        ),
+        const Icon(
+          Icons.edit_outlined,
+          size: 14,
+          color: Color(0xFF8495A6),
+        ),
+        const SizedBox(width: 10),
+        const Icon(
+          Icons.close,
+          size: 14,
+          color: Color(0xFF8495A6),
+        ),
+      ],
+    );
+  }
+}
